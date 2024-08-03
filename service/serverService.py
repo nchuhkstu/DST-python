@@ -12,7 +12,8 @@ class ServerService:
     def execute_pipeline(self, world, cluster_name):
         command = exe_name + '-console -cluster /DST/' + cluster_name + ' -shard ' + world
         os.chdir(exe_path)
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE, encoding='utf-8', errors='ignore')
+        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
+                                errors='ignore', universal_newlines=True)
         if world == 'Master':
             self.server_dict[cluster_name]['master_proc'] = proc
         elif world == 'Caves':
@@ -40,17 +41,17 @@ class ServerService:
         pass
 
     def save(self, cluster_name):
-        self.server_dict[cluster_name].master_proc.stdin.write('c_save()' + '\n')
-        self.server_dict[cluster_name].master_proc.stdin.flush()
-        self.server_dict[cluster_name].caves_proc.stdin.write('c_save()' + '\n')
-        self.server_dict[cluster_name].caves_proc.stdin.flush()
+        self.server_dict[cluster_name]['master_proc'].stdin.write('c_save()' + '\n')
+        self.server_dict[cluster_name]['master_proc'].stdin.flush()
+        self.server_dict[cluster_name]['caves_proc'].stdin.write('c_save()' + '\n')
+        self.server_dict[cluster_name]['caves_proc'].stdin.flush()
         return cluster_name + "Server saved"
 
     def backtrack(self, cluster_name, days):
-        self.server_dict[cluster_name].master_proc.stdin.write('c_rollback(' + days + ' )' + '\n')
-        self.server_dict[cluster_name].master_proc.stdin.flush()
-        self.server_dict[cluster_name].caves_proc.stdin.write('c_rollback(' + days + ' )' + '\n')
-        self.server_dict[cluster_name].caves_proc.stdin.flush()
+        self.server_dict[cluster_name]['master_proc'].stdin.write('c_rollback(' + days + ' )' + '\n')
+        self.server_dict[cluster_name]['master_proc'].stdin.flush()
+        self.server_dict[cluster_name]['caves_proc'].stdin.write('c_rollback(' + days + ' )' + '\n')
+        self.server_dict[cluster_name]['caves_proc'].stdin.flush()
         return cluster_name + "rollback " + days
 
     def remake(self):
