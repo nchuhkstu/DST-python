@@ -7,14 +7,16 @@ from config import cluster_path
 
 class ClusterService:
     def __init__(self):
-        self.template_cluster_path = "C:/Users/zhiyo/PycharmProjects/DST2/cluster/template"
+        self.template_cluster_path = os.getcwd()
         self.cluster_path = cluster_path + "/DST"
 
     def get(self):
         if not os.path.exists(self.cluster_path):
             os.makedirs(self.cluster_path)
+        clusters = []
         for item in os.listdir(self.cluster_path):
-            print(item)
+            clusters.append(item)
+        return clusters
 
     def add(self):
         if not os.path.exists(self.cluster_path):

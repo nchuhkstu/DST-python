@@ -11,11 +11,16 @@ def start(cluster_name):
     return serverService.start(cluster_name=cluster_name)
 
 
-@serverController.route('/server/stop', methods=['GET'])
-def stop():
-    return serverService.stop()
+@serverController.route('/server/stop/<cluster_name>', methods=['GET'])
+def stop(cluster_name):
+    return serverService.stop(cluster_name=cluster_name)
 
 
-@serverController.route('/server/save', methods=['GET'])
-def stop():
-    return serverService.stop()
+@serverController.route('/server/save/<cluster_name>', methods=['GET'])
+def save(cluster_name):
+    return serverService.stop(cluster_name=cluster_name)
+
+
+@serverController.route('/server/backtrack/<cluster_name>/days', methods=['GET'])
+def backtrack(cluster_name, days):
+    return serverService.backtrack(cluster_name=cluster_name, days=days)
