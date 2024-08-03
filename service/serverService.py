@@ -14,9 +14,9 @@ class ServerService:
         os.chdir(exe_path)
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, encoding='utf-8', errors='ignore')
         if world == 'Master':
-            self.server_dict[cluster_name].master_proc = proc
+            self.server_dict[cluster_name]['master_proc'] = proc
         elif world == 'Caves':
-            self.server_dict[cluster_name].caves_proc = proc
+            self.server_dict[cluster_name]['caves_proc'] = proc
         while True:
             output = proc.stdout.readline()
             if output == '' and proc.poll() is not None:
@@ -28,11 +28,13 @@ class ServerService:
     def start(self, cluster_name):
         self.server_dict[cluster_name] = {
             'master_threading': threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start(),
-            'caves_threading': threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start(),}
+            'caves_threading': threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start(), }
+        return cluster_name + "Server started"
 
     def stop(self, cluster_name):
-        self.server_dict[cluster_name].master_proc.terminate()
-        self.server_dict[cluster_name].caves_proc.terminate()
+        self.server_dict[cluster_name]['master_proc'].terminate()
+        self.server_dict[cluster_name]['caves_proc'].terminate()
+        return cluster_name + "Server stopped"
 
     def pause(self):
         pass
@@ -42,16 +44,14 @@ class ServerService:
         self.server_dict[cluster_name].master_proc.stdin.flush()
         self.server_dict[cluster_name].caves_proc.stdin.write('c_save()' + '\n')
         self.server_dict[cluster_name].caves_proc.stdin.flush()
+        return cluster_name + "Server saved"
 
     def backtrack(self, cluster_name, days):
         self.server_dict[cluster_name].master_proc.stdin.write('c_rollback(' + days + ' )' + '\n')
         self.server_dict[cluster_name].master_proc.stdin.flush()
         self.server_dict[cluster_name].caves_proc.stdin.write('c_rollback(' + days + ' )' + '\n')
         self.server_dict[cluster_name].caves_proc.stdin.flush()
+        return cluster_name + "rollback " + days
 
     def remake(self):
         pass
-
-
-server = ServerService()
-server.start('cluster_3')

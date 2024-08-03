@@ -20,3 +20,8 @@ def delete(cluster_name):
 @clusterController.route('/cluster/', methods=['GET'])
 def get():
     return clusterService.get()
+
+
+@clusterController.route('/cluster/add', methods=['GET'])
+def add():
+    return clusterService.add()

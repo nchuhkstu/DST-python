@@ -1,3 +1,3 @@
-cluster_path = "C:/Users/zhiyo/Documents/klei/DoNotStarveTogether"
-exe_path = "E:/Steam/steamapps/common/Don't Starve Together/bin"
+cluster_path = "C:/Users/qhl666/Documents/klei/DoNotStarveTogether"
+exe_path = "D:/steam/steamapps/common/Don't Starve Together Dedicated Server/bin"
 exe_name = "dontstarve_dedicated_server_nullrenderer.exe "

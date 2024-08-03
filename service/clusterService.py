@@ -7,7 +7,7 @@ from config import cluster_path
 
 class ClusterService:
     def __init__(self):
-        self.template_cluster_path = os.getcwd()
+        self.template_cluster_path = os.getcwd() + "/cluster/template"
         self.cluster_path = cluster_path + "/DST"
 
     def get(self):
@@ -29,13 +29,12 @@ class ClusterService:
         new_cluster_path = os.path.join(self.cluster_path, cluster_name)
         shutil.copytree(self.template_cluster_path, new_cluster_path)
         os.utime(new_cluster_path, times=(time.time(), time.time()))
+        return cluster_name
 
     def delete(self, cluster_name):
         shutil.rmtree(os.path.join(self.cluster_path, cluster_name))
+        return "true"
 
     def upload(self, file):
         pass
 
-
-clusterService = ClusterService()
-clusterService.add()
