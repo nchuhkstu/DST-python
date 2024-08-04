@@ -2,7 +2,8 @@ import os
 import subprocess
 import threading
 
-from config import exe_path, exe_name
+from config import exe_name
+from controller.systemController import systemService
 
 
 class ServerService:
@@ -11,7 +12,7 @@ class ServerService:
 
     def execute_pipeline(self, world, cluster_name):
         command = exe_name + '-console -cluster /DST/' + cluster_name + ' -shard ' + world
-        os.chdir(exe_path)
+        os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
         if world == 'Master':

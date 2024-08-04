@@ -8,7 +8,6 @@ CORS(serverController)
 serverService = ServerService()
 
 
-
 @serverController.route('/server/start/<cluster_name>', methods=['GET'])
 def start(cluster_name):
     return serverService.start(cluster_name=cluster_name)
