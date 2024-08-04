@@ -18,23 +18,31 @@ class ServerService:
             self.server_dict[cluster_name]['master_proc'] = proc
         elif world == 'Caves':
             self.server_dict[cluster_name]['caves_proc'] = proc
+        self.server_dict[cluster_name]['current_players'] = 0
         while True:
             output = proc.stdout.readline()
-            if output == '' and proc.poll() is not None:
+            if output.strip() == '' and proc.poll() is not None:
                 break
             if output:
+                if world == 'Master':
+                    if '[Join Announcement]' in output:
+                        self.server_dict[cluster_name]['current_players'] += 1
+                    elif '[Leave Announcement]' in output:
+                        self.server_dict[cluster_name]['current_players'] -= 1
                 print(output.strip())
         return proc.poll()
 
     def start(self, cluster_name):
         self.server_dict[cluster_name] = {
             'master_threading': threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start(),
-            'caves_threading': threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start(), }
+            'caves_threading': threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start(),
+            'status': "运行中"}
         return cluster_name + "Server started"
 
     def stop(self, cluster_name):
         self.server_dict[cluster_name]['master_proc'].terminate()
         self.server_dict[cluster_name]['caves_proc'].terminate()
+        self.server_dict[cluster_name]['status'] = "未启动"
         return cluster_name + "Server stopped"
 
     def pause(self):
