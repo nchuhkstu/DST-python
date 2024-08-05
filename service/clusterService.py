@@ -13,7 +13,7 @@ class ClusterService:
     @staticmethod
     def get():
         if not os.path.exists(systemService.cluster_path + "/DST"):
-            os.makedirs(systemService.cluster_path + "/DST")
+            return "false"
         clusters = []
         cluster_names = sorted(os.listdir(systemService.cluster_path + "/DST"), key=len)
         for cluster_name in cluster_names:

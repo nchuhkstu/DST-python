@@ -4,11 +4,14 @@ import threading
 
 from config import exe_name
 from controller.systemController import systemService
+from utils.dataBase import conn
+from tinydb_sqlite import SQLiteTable
 
 
 class ServerService:
     def __init__(self):
         self.server_dict = {}
+        self.conn = conn
 
     def execute_pipeline(self, world, cluster_name):
         command = exe_name + '-console -cluster /DST/' + cluster_name + ' -shard ' + world
@@ -28,17 +31,21 @@ class ServerService:
                 if world == 'Master':
                     if '[Join Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] += 1
+                        self.conn.cursor().execute("INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
                     elif '[Leave Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] -= 1
                 print(output.strip())
         return proc.poll()
 
     def start(self, cluster_name):
+        if not os.path.exists(systemService.exe_path):
+            print(systemService.exe_path)
+            return "专用服务器可执行文件路径错误，启动失败"
         self.server_dict[cluster_name] = {
             'master_threading': threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start(),
             'caves_threading': threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start(),
             'status': "运行中"}
-        return cluster_name + "Server started"
+        return "存档：" + cluster_name + " 启动成功"
 
     def stop(self, cluster_name):
         self.server_dict[cluster_name]['master_proc'].terminate()
