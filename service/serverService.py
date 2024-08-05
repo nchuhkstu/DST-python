@@ -5,7 +5,6 @@ import threading
 from config import exe_name
 from controller.systemController import systemService
 from utils.dataBase import conn
-from tinydb_sqlite import SQLiteTable
 
 
 class ServerService:
