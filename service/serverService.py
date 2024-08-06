@@ -3,7 +3,6 @@ import subprocess
 import threading
 import time
 
-import psutil
 
 from config import exe_name
 from controller.systemController import systemService
@@ -21,7 +20,6 @@ class ServerService:
         os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
-        psutil.Process(proc.pid)
         if world == 'Master':
             self.server_dict.setdefault(cluster_name, {})['master_proc'] = proc
         elif world == 'Caves':
@@ -39,7 +37,12 @@ class ServerService:
                     elif '[Leave Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] -= 1
                     print(output.strip())
-                    socketIO.emit('log', output.strip())
+                    if ']:' in output:
+                        socketIO.emit('log', {
+                            "cluster_name": cluster_name,
+                            "time": output.strip().split("]:")[0][1:],
+                            "message": output.strip().split("]:")[1]
+                        })
         return proc.poll()
 
     def start(self, cluster_name):
