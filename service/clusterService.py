@@ -1,3 +1,4 @@
+import json
 import os.path
 import shutil
 import time
@@ -48,6 +49,65 @@ class ClusterService:
             clusters.append(cluster)
         return clusters
 
+    def getroom(self, cluster_name):
+        room = {"cluster_index": cluster_name}
+        path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
+        with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
+            for line in file:
+                if "cluster_name" in line:
+                    room["cluster_name"] = line.split(" = ")[1].strip()
+                elif "cluster_description" in line:
+                    room["cluster_description"] = line.split(" = ")[1].strip()
+                elif "game_mode" in line:
+                    room["game_mode"] = line.split(" = ")[1].strip()
+                elif "max_players" in line:
+                    room["max_players"] = line.split(" = ")[1].strip()
+                elif "max_snapshots" in line:
+                    room["max_snapshots"] = line.split(" = ")[1].strip()
+                elif "cluster_password" in line:
+                    room["cluster_password"] = line.split(" = ")[1].strip()
+                elif "pvp" in line:
+                    room["pvp"] = line.split(" = ")[1].strip()
+                elif "pause_when_empty" in line:
+                    room["pause_when_empty"] = line.split(" = ")[1].strip()
+                elif "vote_enabled" in line:
+                    room["vote_enabled"] = line.split(" = ")[1].strip()
+                elif "vote_kick_enabled" in line:
+                    room["vote_kick_enabled"] = line.split(" = ")[1].strip()
+        return room
+
+    def setroom(self, cluster):
+        convert_true_to_string(cluster)
+        path = os.path.join(systemService.cluster_path + "/DST", cluster["cluster_index"])
+        with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
+            lines = file.readlines()
+
+        with open(os.path.join(path, "cluster.ini"), "w", encoding='utf-8') as file:
+            for line in lines:
+                if "cluster_name" in line:
+                    file.write(f'cluster_name = {cluster["cluster_name"]}\n')
+                elif "cluster_description" in line:
+                    file.write(f'cluster_description = {cluster["cluster_description"]}\n')
+                elif "game_mode" in line:
+                    file.write(f'game_mode = {cluster["game_mode"]}\n')
+                elif "max_players" in line:
+                    file.write(f'max_players = {cluster["max_players"]}\n')
+                elif "max_snapshots" in line:
+                    file.write(f'max_snapshots = {cluster["max_snapshots"]}\n')
+                elif "cluster_password" in line:
+                    file.write(f'cluster_password = {cluster["cluster_password"]}\n')
+                elif "pvp" in line:
+                    file.write(f'pvp = {cluster["pvp"]}\n')
+                elif "pause_when_empty" in line:
+                    file.write(f'pause_when_empty = {cluster["pause_when_empty"]}\n')
+                elif "vote_enabled" in line:
+                    file.write(f'vote_enabled = {cluster["vote_enabled"]}\n')
+                elif "vote_kick_enabled" in line:
+                    file.write(f'vote_kick_enabled = {cluster["vote_kick_enabled"]}\n')
+                else:
+                    file.write(line)
+        return "房间设置成功"
+
     def add(self):
         if not os.path.exists(systemService.cluster_path + "/DST"):
             os.makedirs(systemService.cluster_path + "/DST")
@@ -72,4 +132,16 @@ class ClusterService:
 
     def upload(self, file):
         pass
+
+
+def convert_true_to_string(d):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            convert_true_to_string(value)
+        elif value is True:
+            d[key] = "true"
+        elif value is False:
+            d[key] = "false"
+
+
 

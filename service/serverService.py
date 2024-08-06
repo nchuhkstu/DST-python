@@ -1,10 +1,14 @@
 import os
 import subprocess
 import threading
+import time
+
+import psutil
 
 from config import exe_name
 from controller.systemController import systemService
 from utils.dataBase import conn
+from utils.socketIO import socketIO
 
 
 class ServerService:
@@ -17,10 +21,11 @@ class ServerService:
         os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
+        psutil.Process(proc.pid)
         if world == 'Master':
-            self.server_dict[cluster_name]['master_proc'] = proc
+            self.server_dict.setdefault(cluster_name, {})['master_proc'] = proc
         elif world == 'Caves':
-            self.server_dict[cluster_name]['caves_proc'] = proc
+            self.server_dict.setdefault(cluster_name, {})['caves_proc'] = proc
         self.server_dict[cluster_name]['current_players'] = 0
         while True:
             output = proc.stdout.readline()
@@ -33,7 +38,8 @@ class ServerService:
                         self.conn.cursor().execute("INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
                     elif '[Leave Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] -= 1
-                print(output.strip())
+                    print(output.strip())
+                    socketIO.emit('log', output.strip())
         return proc.poll()
 
     def start(self, cluster_name):
