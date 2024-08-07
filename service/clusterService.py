@@ -74,6 +74,16 @@ class ClusterService:
                     room["vote_enabled"] = line.split(" = ")[1].strip()
                 elif "vote_kick_enabled" in line:
                     room["vote_kick_enabled"] = line.split(" = ")[1].strip()
+
+        with open(os.path.join(path, "Master", "server.ini"), "r", encoding='utf-8') as file:
+            for line in file:
+                if "server_port" in line:
+                    room["master_server_port"] = line.split(" = ")[1].strip()
+
+        with open(os.path.join(path, "Caves", "server.ini"), "r", encoding='utf-8') as file:
+            for line in file:
+                if "server_port" in line and "master_server_port" not in line:
+                    room["caves_server_port"] = line.split(" = ")[1].strip()
         return room
 
     def setroom(self, cluster):
