@@ -9,7 +9,7 @@ from controller.systemController import systemService
 
 class ClusterService:
     def __init__(self):
-        self.template_cluster_path = os.getcwd() + "/cluster/template"
+        self.template_cluster_path = os.getcwd() + "/_internal/cluster/template"
 
     @staticmethod
     def get():
@@ -156,12 +156,13 @@ class ClusterService:
         return log_list
 
     def add(self):
+        if not os.path.exists(systemService.cluster_path):
+            return {"status": "error", "message": "存档路径不存在"}
         if not os.path.exists(systemService.cluster_path + "/DST"):
             os.makedirs(systemService.cluster_path + "/DST")
         index = 0
         items = sorted(os.listdir(systemService.cluster_path + "/DST"), key=len)
         for item in items:
-            print(item)
             for i in range(len(item)):
                 if item[i] == "_":
                     index = int(item[i + 1:])
@@ -169,8 +170,11 @@ class ClusterService:
         new_cluster_path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
         shutil.copytree(self.template_cluster_path, new_cluster_path)
         os.utime(new_cluster_path, times=(time.time(), time.time()))
-        return {"cluster_name": cluster_name, "server_name": "默认初始的世界", "game_mode": "生存", "days": "0",
-                "max_players": "8", "current_players": "0", "status": "未启动", "port": "10999,10998"}
+        return {"status": "ok",
+                "message": {"cluster_name": cluster_name, "server_name": "默认初始的世界", "game_mode": "生存",
+                            "days": "0",
+                            "max_players": "8", "current_players": "0", "status": "未启动", "port": "10999,10998"}
+                }
 
     @staticmethod
     def delete(cluster_name):

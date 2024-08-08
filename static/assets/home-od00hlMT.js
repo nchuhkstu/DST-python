@@ -1,1 +1,0 @@
-import{_ as o,r,c as n,a as s,b as d,F as c,o as m}from"./index-CaftvlP6.js";const u={data(){return{}},methods:{goAdmin(){r.push({path:"/admin"})}},mounted(){}};function p(i,e,l,_,f,t){return m(),n(c,null,[s(" 主页 "),d("button",{onClick:e[0]||(e[0]=(...a)=>t.goAdmin&&t.goAdmin(...a))},"管理员页面")],64)}const x=o(u,[["render",p]]);export{x as default};

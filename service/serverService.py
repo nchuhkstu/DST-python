@@ -1,9 +1,6 @@
 import os
 import subprocess
 import threading
-import time
-
-from config import exe_name
 from controller.systemController import systemService
 from utils.dataBase import conn
 from utils.socketIO import socketIO
@@ -15,6 +12,7 @@ class ServerService:
         self.conn = conn
 
     def execute_pipeline(self, world, cluster_name):
+        exe_name = "dontstarve_dedicated_server_nullrenderer.exe "
         command = exe_name + '-console -cluster /DST/' + cluster_name + ' -shard ' + world
         os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
@@ -36,7 +34,6 @@ class ServerService:
                             "INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
                     elif '[Leave Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] -= 1
-                    print(output.strip())
                     if ']:' in output:
                         socketIO.emit('log', {
                             "cluster_name": cluster_name,
@@ -47,7 +44,6 @@ class ServerService:
 
     def start(self, cluster_name):
         if not os.path.exists(systemService.exe_path):
-            print(systemService.exe_path)
             return {"status": "error", "message": "专用服务器可执行文件路径错误，启动失败"}
         self.server_dict[cluster_name] = {
             'master_threading': threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start(),

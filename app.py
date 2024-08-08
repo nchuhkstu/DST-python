@@ -8,7 +8,7 @@ from controller.systemController import systemController
 from utils.socketIO import socketIO
 
 app = Flask(__name__)
-socketIO.init_app(app, async_mode='threading')
+socketIO.init_app(app)
 app.register_blueprint(htmlController)
 app.register_blueprint(serverController)
 app.register_blueprint(clusterController)
