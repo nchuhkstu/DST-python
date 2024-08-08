@@ -25,14 +25,19 @@ def get():
 
 
 @clusterController.route('/cluster/<cluster_name>', methods=['GET'])
-def getroom(cluster_name):
-    return clusterService.getroom(cluster_name=cluster_name)
+def get_room(cluster_name):
+    return clusterService.get_room(cluster_name=cluster_name)
 
 
 @clusterController.route('/cluster/setRoom', methods=['POST'])
-def setroom():
+def set_room():
     cluster = request.json['cluster']
-    return clusterService.setroom(cluster=cluster)
+    return clusterService.set_room(cluster=cluster)
+
+
+@clusterController.route('/cluster/getLog/<cluster_name>', methods=['GET'])
+def get_log(cluster_name):
+    return clusterService.get_log(cluster_name=cluster_name)
 
 
 @clusterController.route('/cluster/add', methods=['GET'])

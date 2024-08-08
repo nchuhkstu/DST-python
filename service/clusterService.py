@@ -49,7 +49,8 @@ class ClusterService:
             clusters.append(cluster)
         return clusters
 
-    def getroom(self, cluster_name):
+    @staticmethod
+    def get_room(cluster_name):
         room = {"cluster_index": cluster_name}
         path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
         with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
@@ -86,7 +87,8 @@ class ClusterService:
                     room["caves_server_port"] = line.split(" = ")[1].strip()
         return room
 
-    def setroom(self, cluster):
+    @staticmethod
+    def set_room(cluster):
         convert_true_to_string(cluster)
         path = os.path.join(systemService.cluster_path + "/DST", cluster["cluster_index"])
         with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
@@ -116,7 +118,42 @@ class ClusterService:
                     file.write(f'vote_kick_enabled = {cluster["vote_kick_enabled"]}\n')
                 else:
                     file.write(line)
+
+        with open(os.path.join(path, "Master", "server.ini"), "r", encoding='utf-8') as file:
+            lines = file.readlines()
+        with open(os.path.join(path, "Master", "server.ini"), "w", encoding='utf-8') as file:
+            for line in lines:
+                if "server_port" in line:
+                    file.write(f'server_port = {cluster["master_server_port"]}\n')
+                else:
+                    file.write(line)
+
+        with open(os.path.join(path, "Caves", "server.ini"), "r", encoding='utf-8') as file:
+            lines = file.readlines()
+        with open(os.path.join(path, "Caves", "server.ini"), "w", encoding='utf-8') as file:
+            for line in lines:
+                if "server_port" in line and "master_server_port" not in line:
+                    file.write(f'server_port = {cluster["caves_server_port"]}\n')
+                else:
+                    file.write(line)
         return "房间设置成功"
+
+    @staticmethod
+    def get_log(cluster_name):
+        path = os.path.join(systemService.cluster_path + "/DST", cluster_name, "Master", "server_log.txt")
+        if not os.path.exists(path):
+            return "日志不存在"
+        log_list = []
+        with open(path, "r", encoding='utf-8') as file:
+            lines = file.readlines()
+            for line in lines:
+                if ']:' in line:
+                    log_list.append({
+                        "cluster_name": cluster_name,
+                        "time": line.strip().split("]:")[0][1:],
+                        "message": line.strip().split("]:")[1]
+                    })
+        return log_list
 
     def add(self):
         if not os.path.exists(systemService.cluster_path + "/DST"):
@@ -152,6 +189,3 @@ def convert_true_to_string(d):
             d[key] = "true"
         elif value is False:
             d[key] = "false"
-
-
-

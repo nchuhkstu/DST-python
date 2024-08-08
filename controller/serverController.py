@@ -26,3 +26,8 @@ def save(cluster_name):
 @serverController.route('/server/backtrack/<cluster_name>/<days>', methods=['GET'])
 def backtrack(cluster_name, days):
     return serverService.backtrack(cluster_name=cluster_name, days=days)
+
+
+@serverController.route('/server/custom_command/<cluster_name>/<command>', methods=['GET'])
+def custom_command(cluster_name, command):
+    return serverService.custom_command(cluster_name=cluster_name, command=command)
