@@ -136,7 +136,7 @@ class ClusterService:
                     file.write(f'server_port = {cluster["caves_server_port"]}\n')
                 else:
                     file.write(line)
-        return "房间设置成功"
+        return {"status": "ok", "message": "保存成功"}
 
     @staticmethod
     def get_log(cluster_name):

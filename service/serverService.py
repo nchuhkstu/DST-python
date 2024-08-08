@@ -2,14 +2,14 @@ import os
 import subprocess
 import threading
 from controller.systemController import systemService
-from utils.dataBase import conn
+# from utils.dataBase import conn
 from utils.socketIO import socketIO
 
 
 class ServerService:
     def __init__(self):
         self.server_dict = {}
-        self.conn = conn
+        # self.conn = conn
 
     def execute_pipeline(self, world, cluster_name):
         exe_name = "dontstarve_dedicated_server_nullrenderer.exe "
@@ -30,8 +30,8 @@ class ServerService:
                 if world == 'Master':
                     if '[Join Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] += 1
-                        self.conn.cursor().execute(
-                            "INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
+                        # self.conn.cursor().execute(
+                        #     "INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
                     elif '[Leave Announcement]' in output:
                         self.server_dict[cluster_name]['current_players'] -= 1
                     if ']:' in output:

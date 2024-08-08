@@ -30,4 +30,4 @@ class SystemService:
                     file.write(f'exe_path = {self.exe_path}\n')
                 else:
                     file.write(line)
-        return "ok"
+        return {"status": "ok", "message": "保存成功"}
