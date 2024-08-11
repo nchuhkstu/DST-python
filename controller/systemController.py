@@ -19,3 +19,8 @@ def post():
     exe_path = request.get_json().get('exe_path')
     return systemService.post(cluster_path, exe_path)
 
+
+@systemController.route('/system/information', methods=['GET'])
+def information():
+    return systemService.get_system_info()
+

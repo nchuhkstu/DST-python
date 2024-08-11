@@ -1,4 +1,7 @@
 import os.path
+import threading
+
+from utils.systemInform import system_information_running, system_information
 
 
 class SystemService:
@@ -11,7 +14,7 @@ class SystemService:
                 if "exe_path" in line:
                     self.exe_path = line.split(" = ")[1].strip()
         self.config_path = os.getcwd()
-        pass
+        threading.Thread(target=system_information_running, args=()).start()
 
     def get(self):
         return {"cluster_path": self.cluster_path, "exe_path": self.exe_path}
@@ -31,3 +34,7 @@ class SystemService:
                 else:
                     file.write(line)
         return {"status": "ok", "message": "保存成功"}
+
+    @staticmethod
+    def get_system_info():
+        return system_information

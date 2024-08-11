@@ -9,7 +9,7 @@ from controller.systemController import systemService
 
 class ClusterService:
     def __init__(self):
-        self.template_cluster_path = os.getcwd() + "/_internal/cluster/template"
+        self.template_cluster_path = os.getcwd() + "/cluster/template"
 
     @staticmethod
     def get():
