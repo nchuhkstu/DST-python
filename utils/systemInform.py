@@ -1,4 +1,6 @@
 import ctypes
+import datetime
+
 import cpuinfo
 import psutil
 from utils.socketIO import socketIO
@@ -21,6 +23,15 @@ def system_information_static():
 
 
 system_information = system_information_static()
+
+
+def get_cpu_uptime():
+    uptime = datetime.datetime.now() - datetime.datetime.fromtimestamp(psutil.boot_time())
+    days, remainder = divmod(uptime.total_seconds(), 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(days)}:{int(hours)}:{int(minutes):02d}:{int(seconds):02d}"
+
 
 lib = ctypes.CDLL('./Project1.dll')
 
@@ -67,7 +78,8 @@ def system_information_running():
                 "process_count": data.cpuData.process_count,
                 "thread_count": data.cpuData.thread_count,
                 "handle_count": data.cpuData.handle_count,
-                "usage": {}  # 初始化 usage 字典
+                "usage": {},
+                "running_time": get_cpu_uptime()
             },
             "memoryData": {
                 "available": data.memoryData.available,
