@@ -9,7 +9,7 @@ from controller.systemController import systemService
 
 class ClusterService:
     def __init__(self):
-        self.template_cluster_path = os.getcwd() + "/_internal/cluster/template"
+        self.template_cluster_path = os.getcwd() + "/cluster/template"
 
     @staticmethod
     def get():
@@ -136,7 +136,7 @@ class ClusterService:
                     file.write(f'server_port = {cluster["caves_server_port"]}\n')
                 else:
                     file.write(line)
-        return "房间设置成功"
+        return {"status": "ok", "message": "保存成功"}
 
     @staticmethod
     def get_log(cluster_name):
