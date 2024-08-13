@@ -51,6 +51,7 @@ class MemoryData(ctypes.Structure):
         ('available', ctypes.c_double),
         ('available_2', ctypes.c_double),
         ('commited', ctypes.c_double),
+        ('commited_percent', ctypes.c_double),
         ('pool_paged', ctypes.c_double),
         ('pool_not_paged', ctypes.c_double)
     ]
@@ -84,7 +85,9 @@ def system_information_running():
             "memoryData": {
                 "available": data.memoryData.available,
                 "available_2": data.memoryData.available_2,
+                "total": psutil.virtual_memory().total / 1024 / 1024,
                 "commited": data.memoryData.commited,
+                "commited_percent": data.memoryData.commited_percent,
                 "pool_paged": data.memoryData.pool_paged,
                 "pool_not_paged": data.memoryData.pool_not_paged
             }
