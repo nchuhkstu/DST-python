@@ -67,6 +67,8 @@ class Data(ctypes.Structure):
 # 定义 getCurrentCpuUsage 函数
 lib.getCurrentCpuUsage.argtypes = [ctypes.c_int]
 lib.getCurrentCpuUsage.restype = Data
+lib.cpuProcessUsage.argtypes = [ctypes.c_char_p]
+lib.cpuProcessUsage.restype = ctypes.c_double
 
 
 def system_information_running():
@@ -96,3 +98,7 @@ def system_information_running():
         for i in range(num + 1):  # 假设 num 为 5
             result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 1)
         socketIO.emit('system_information', result)
+
+
+
+
