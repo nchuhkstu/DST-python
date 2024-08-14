@@ -94,5 +94,5 @@ def system_information_running():
         }
 
         for i in range(num + 1):  # 假设 num 为 5
-            result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 0)
+            result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 1)
         socketIO.emit('system_information', result)
