@@ -32,21 +32,22 @@ class ServerService:
         os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
-        if world == 'Master':
-            self.server_dict.setdefault(cluster_name, {})['master_proc'] = proc
-            if self.process_num == 0:
-                self.server_dict[cluster_name]['master_process_name'] = "dontstarve_dedicated_server_nullrenderer"
-            else:
-                self.server_dict[cluster_name]['master_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
-                                                                         + str(self.process_num))
-        elif world == 'Caves':
-            self.server_dict.setdefault(cluster_name, {})['caves_proc'] = proc
-            if self.process_num == 0:
-                self.server_dict[cluster_name]['caves_process_name'] = "dontstarve_dedicated_server_nullrenderer"
-            else:
-                self.server_dict[cluster_name]['caves_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
-                                                                        + str(self.process_num))
-        self.process_num += 1
+        with self.lock:
+            if world == 'Master':
+                self.server_dict.setdefault(cluster_name, {})['master_proc'] = proc
+                if self.process_num == 0:
+                    self.server_dict[cluster_name]['master_process_name'] = "dontstarve_dedicated_server_nullrenderer"
+                else:
+                    self.server_dict[cluster_name]['master_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
+                                                                             + str(self.process_num))
+            elif world == 'Caves':
+                self.server_dict.setdefault(cluster_name, {})['caves_proc'] = proc
+                if self.process_num == 0:
+                    self.server_dict[cluster_name]['caves_process_name'] = "dontstarve_dedicated_server_nullrenderer"
+                else:
+                    self.server_dict[cluster_name]['caves_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
+                                                                            + str(self.process_num))
+            self.process_num += 1
         self.server_dict[cluster_name]['current_players'] = 0
         while True:
             output = proc.stdout.readline()

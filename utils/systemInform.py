@@ -57,10 +57,19 @@ class MemoryData(ctypes.Structure):
     ]
 
 
+class NetworkData(ctypes.Structure):
+    _fields_ = [
+        ('total', ctypes.c_double),
+        ('sent', ctypes.c_double),
+        ('receive', ctypes.c_double),
+    ]
+
+
 class Data(ctypes.Structure):
     _fields_ = [
         ('cpuData', CpuData),
-        ('memoryData', MemoryData)
+        ('memoryData', MemoryData),
+        ('networkData', NetworkData)
     ]
 
 
@@ -92,6 +101,11 @@ def system_information_running():
                 "commited_percent": data.memoryData.commited_percent,
                 "pool_paged": data.memoryData.pool_paged,
                 "pool_not_paged": data.memoryData.pool_not_paged
+            },
+            "networkData": {
+                "total": data.networkData.total,
+                "sent": data.networkData.sent,
+                "receive": data.networkData.receive
             }
         }
 
