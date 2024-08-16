@@ -15,10 +15,15 @@ class ServerService:
         self.server_dict = {}
         self.process_num = 0
         self.lock = threading.Lock()
+        self.exe_name = "dontstarve_dedicated_server_nullrenderer"
         # self.conn = conn
 
-    def process_cpu_usage_thread(self, process_name, cluster_name, world):
-        while self.server_dict[cluster_name][world + '_process_name'] is not None:
+    def process_cpu_usage_thread(self, cluster_name, world):
+        while cluster_name in self.server_dict:
+            if self.server_dict[cluster_name][world + '_process_index'] == 0:
+                process_name = self.exe_name
+            else:
+                process_name = self.exe_name + "#" + str(self.server_dict[cluster_name][world + '_process_index'])
             usage = lib.cpuProcessUsage(ctypes.c_char_p(process_name.encode('utf-8')))
             socketIO.emit('process_cpu_usage', {
                 'cluster_name': cluster_name,
@@ -27,26 +32,17 @@ class ServerService:
             })
 
     def execute_pipeline(self, world, cluster_name):
-        exe_name = "dontstarve_dedicated_server_nullrenderer.exe "
-        command = exe_name + '-console -cluster /DST/' + cluster_name + ' -shard ' + world
+        command = self.exe_name + '.exe -console -cluster /DST/' + cluster_name + ' -shard ' + world
         os.chdir(systemService.exe_path)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
         with self.lock:
             if world == 'Master':
                 self.server_dict.setdefault(cluster_name, {})['master_proc'] = proc
-                if self.process_num == 0:
-                    self.server_dict[cluster_name]['master_process_name'] = "dontstarve_dedicated_server_nullrenderer"
-                else:
-                    self.server_dict[cluster_name]['master_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
-                                                                             + str(self.process_num))
+                self.server_dict[cluster_name]['master_process_index'] = self.process_num
             elif world == 'Caves':
                 self.server_dict.setdefault(cluster_name, {})['caves_proc'] = proc
-                if self.process_num == 0:
-                    self.server_dict[cluster_name]['caves_process_name'] = "dontstarve_dedicated_server_nullrenderer"
-                else:
-                    self.server_dict[cluster_name]['caves_process_name'] = ("dontstarve_dedicated_server_nullrenderer#"
-                                                                            + str(self.process_num))
+                self.server_dict[cluster_name]['caves_process_index'] = self.process_num
             self.process_num += 1
         self.server_dict[cluster_name]['current_players'] = 0
         while True:
@@ -75,25 +71,33 @@ class ServerService:
             return {"status": "error", "message": "专用服务器可执行文件路径错误，启动失败"}
         threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start()
         threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start()
-        while self.server_dict[cluster_name].get('master_process_name') is None or self.server_dict[cluster_name].get(
-                'caves_process_name') is None:
+        while self.server_dict[cluster_name].get('master_process_index') is None or self.server_dict[cluster_name].get(
+                'caves_process_index') is None:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread,
-                         args=(self.server_dict[cluster_name]['master_process_name'], cluster_name, 'master')).start()
+                         args=(cluster_name, 'master')).start()
         threading.Thread(target=self.process_cpu_usage_thread,
-                         args=(self.server_dict[cluster_name]['caves_process_name'], cluster_name, 'caves')).start()
+                         args=(cluster_name, 'caves')).start()
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
 
     def stop(self, cluster_name):
         if cluster_name not in self.server_dict:
-            return {"status": "error", "message": "存档：" + cluster_name + " 尚未启动"}
+            return {"status": "error", "message": f"存档：{cluster_name} 尚未启动"}
+
         self.server_dict[cluster_name]['master_proc'].terminate()
         self.server_dict[cluster_name]['caves_proc'].terminate()
+
         self.server_dict[cluster_name]['status'] = "未启动"
-        self.server_dict[cluster_name]['master_process_name'] = None
-        self.server_dict[cluster_name]['caves_process_name'] = None
-        self.process_num -= 2
-        return {"status": "ok", "message": "存档：" + cluster_name + " 已停止"}
+        max_index = max(self.server_dict[cluster_name]['master_process_index'], self.server_dict[cluster_name]['caves_process_index'])
+        del self.server_dict[cluster_name]
+
+        for key, server in self.server_dict.items():
+            if server['master_process_index'] > max_index:
+                self.server_dict[key]['master_process_index'] = self.server_dict[key]['master_process_index'] - 2
+                self.server_dict[key]['caves_process_index'] = self.server_dict[key]['caves_process_index'] - 2
+        self.process_num = self.process_num - 2
+
+        return {"status": "success", "message": f"{cluster_name} 已成功停止"}
 
     def pause(self):
         pass
