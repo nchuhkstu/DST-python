@@ -73,11 +73,18 @@ class Data(ctypes.Structure):
     ]
 
 
+class ProcessData(ctypes.Structure):
+    _fields_ = [
+        ('cpu', ctypes.c_double),
+        ('memory', ctypes.c_double),
+    ]
+
+
 # 定义 getCurrentCpuUsage 函数
 lib.getCurrentCpuUsage.argtypes = [ctypes.c_int]
 lib.getCurrentCpuUsage.restype = Data
 lib.cpuProcessUsage.argtypes = [ctypes.c_char_p]
-lib.cpuProcessUsage.restype = ctypes.c_double
+lib.cpuProcessUsage.restype = ProcessData
 
 
 def system_information_running():
@@ -103,9 +110,9 @@ def system_information_running():
                 "pool_not_paged": data.memoryData.pool_not_paged
             },
             "networkData": {
-                "total": data.networkData.total,
-                "sent": data.networkData.sent,
-                "receive": data.networkData.receive
+                "total": formatted(data.networkData.total),
+                "sent": formatted(data.networkData.sent),
+                "receive": formatted(data.networkData.receive)
             }
         }
 
@@ -113,6 +120,18 @@ def system_information_running():
             result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 1)
         socketIO.emit('system_information', result)
 
+
+def formatted(byte):
+    if byte < 8 * 1024:
+        return "{:.2f} B".format(byte / 8)
+    if byte < 8 * 1024 * 1024:
+        return "{:.2f} KB".format(byte / 8 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024:
+        return "{:.2f} MB".format(byte / 8 / 1024 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024:
+        return "{:.2f} GB".format(byte / 8 / 1024 / 1024 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024 * 1024:
+        return "{:.2f} TB".format(byte / 8 / 1024 / 1024 / 1024 / 1024)
 
 
 

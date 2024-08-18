@@ -28,7 +28,8 @@ class ServerService:
             socketIO.emit('process_cpu_usage', {
                 'cluster_name': cluster_name,
                 'world_name': world,
-                'usage': usage
+                'cpu_usage': usage.cpu,
+                'memory_usage': usage.memory,
             })
 
     def execute_pipeline(self, world, cluster_name):
@@ -70,14 +71,14 @@ class ServerService:
         if not os.path.exists(systemService.exe_path):
             return {"status": "error", "message": "专用服务器可执行文件路径错误，启动失败"}
         threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start()
-        threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start()
-        while self.server_dict[cluster_name].get('master_process_index') is None or self.server_dict[cluster_name].get(
-                'caves_process_index') is None:
+        while self.server_dict[cluster_name].get('master_process_index') is None:
             time.sleep(0.1)
-        threading.Thread(target=self.process_cpu_usage_thread,
-                         args=(cluster_name, 'master')).start()
-        threading.Thread(target=self.process_cpu_usage_thread,
-                         args=(cluster_name, 'caves')).start()
+        threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'master')).start()
+        
+        threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start()
+        while self.server_dict[cluster_name].get('caves_process_index') is None:
+            time.sleep(0.1)
+        threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'caves')).start()
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
 
     def stop(self, cluster_name):
@@ -103,6 +104,8 @@ class ServerService:
         pass
 
     def save(self, cluster_name):
+        if cluster_name not in self.server_dict:
+            return {"status": "error", "message": f"存档：{cluster_name} 尚未启动"}
         self.server_dict[cluster_name]['master_proc'].stdin.write('c_save()' + '\n')
         self.server_dict[cluster_name]['master_proc'].stdin.flush()
         self.server_dict[cluster_name]['caves_proc'].stdin.write('c_save()' + '\n')
@@ -110,11 +113,13 @@ class ServerService:
         return {"status": "ok", "message": "存档: " + cluster_name + "保存成功"}
 
     def backtrack(self, cluster_name, days):
+        if cluster_name not in self.server_dict:
+            return {"status": "error", "message": f"存档：{cluster_name} 尚未启动"}
         self.server_dict[cluster_name]['master_proc'].stdin.write('c_rollback(' + days + ' )' + '\n')
         self.server_dict[cluster_name]['master_proc'].stdin.flush()
         self.server_dict[cluster_name]['caves_proc'].stdin.write('c_rollback(' + days + ' )' + '\n')
         self.server_dict[cluster_name]['caves_proc'].stdin.flush()
-        return cluster_name + "rollback " + days
+        return {"status": "ok", "message": "存档: " + cluster_name + "正在回档中"}
 
     def custom_command(self, cluster_name, command):
         self.server_dict[cluster_name]['master_proc'].stdin.write(command + '\n')

@@ -22,6 +22,7 @@ class SystemService:
     def post(self, path_cluster, path_exe):
         self.cluster_path = path_cluster
         self.exe_path = path_exe
+        os.chdir(self.config_path)
         with open("config.ini", "r", encoding="utf-8") as file:
             lines = file.readlines()
 
