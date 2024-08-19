@@ -31,6 +31,8 @@ class ServerService:
                 'cpu_usage': usage.cpu,
                 'memory_usage': usage.memory,
             })
+        socketIO.emit('process_cpu_usage',
+                      {'cluster_name': cluster_name, 'world_name': world, 'cpu_usage': 0, 'memory_usage': 0, })
 
     def execute_pipeline(self, world, cluster_name):
         command = self.exe_name + '.exe -console -cluster /DST/' + cluster_name + ' -shard ' + world
@@ -74,7 +76,7 @@ class ServerService:
         while self.server_dict[cluster_name].get('master_process_index') is None:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'master')).start()
-        
+
         threading.Thread(target=self.execute_pipeline, args=('Caves', cluster_name,)).start()
         while self.server_dict[cluster_name].get('caves_process_index') is None:
             time.sleep(0.1)
@@ -89,7 +91,8 @@ class ServerService:
         self.server_dict[cluster_name]['caves_proc'].terminate()
 
         self.server_dict[cluster_name]['status'] = "未启动"
-        max_index = max(self.server_dict[cluster_name]['master_process_index'], self.server_dict[cluster_name]['caves_process_index'])
+        max_index = max(self.server_dict[cluster_name]['master_process_index'],
+                        self.server_dict[cluster_name]['caves_process_index'])
         del self.server_dict[cluster_name]
 
         for key, server in self.server_dict.items():

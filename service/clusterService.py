@@ -179,7 +179,7 @@ class ClusterService:
     @staticmethod
     def delete(cluster_name):
         shutil.rmtree(os.path.join(systemService.cluster_path + "/DST", cluster_name))
-        return "true"
+        return {"status": "error", "message": "存档已删除"}
 
     def upload(self, file):
         pass
