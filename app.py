@@ -5,6 +5,7 @@ from controller.clusterController import clusterController
 from controller.htmlController import htmlController
 from controller.serverController import serverController
 from controller.systemController import systemController
+from utils.configLoader import g_variable
 from utils.socketIO import socketIO
 
 app = Flask(__name__)
@@ -16,4 +17,4 @@ app.register_blueprint(systemController)
 
 
 if __name__ == '__main__':
-    socketIO.run(app, host='127.0.0.1', port=5000, allow_unsafe_werkzeug=True)
+    socketIO.run(app, host='0.0.0.0', port=g_variable["port"], allow_unsafe_werkzeug=True)
