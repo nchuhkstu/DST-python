@@ -1,41 +1,107 @@
+import datetime
 import os.path
 import threading
 
-from utils.systemInform import system_information_running, system_information
+import psutil
+import wmi
+
+from utils.configLoader import g_variable
+from utils.global_variable import work_path, lib
+from utils.socketIO import socketIO
 
 
 class SystemService:
     def __init__(self):
-        with open("config.ini", "r", encoding="utf-8") as file:
-            lines = file.readlines()
-            for line in lines:
-                if "cluster_path" in line:
-                    self.cluster_path = line.split(" = ")[1].strip()
-                if "exe_path" in line:
-                    self.exe_path = line.split(" = ")[1].strip()
-        self.config_path = os.getcwd()
-        threading.Thread(target=system_information_running, args=()).start()
+        self.system_information = system_information_static()
+        threading.Thread(target=self.system_information_running, args=()).start()
 
     def get(self):
-        return {"cluster_path": self.cluster_path, "exe_path": self.exe_path}
+        return {"cluster_path": g_variable["cluster_path"], "exe_path": g_variable["exe_path"]}
 
     def post(self, path_cluster, path_exe):
-        self.cluster_path = path_cluster
-        self.exe_path = path_exe
-        os.chdir(self.config_path)
+        g_variable["cluster_path"] = path_cluster
+        g_variable["exe_path"] = path_exe
+        os.chdir(work_path)
         with open("config.ini", "r", encoding="utf-8") as file:
             lines = file.readlines()
 
         with open("config.ini", "w", encoding="utf-8") as file:
             for line in lines:
                 if "cluster_path" in line:
-                    file.write(f'cluster_path = {self.cluster_path}\n')
+                    file.write(f'cluster_path = {g_variable["cluster_path"]}\n')
                 elif "exe_path" in line:
-                    file.write(f'exe_path = {self.exe_path}\n')
+                    file.write(f'exe_path = {g_variable["exe_path"]}\n')
                 else:
                     file.write(line)
         return {"status": "ok", "message": "保存成功"}
 
-    @staticmethod
-    def get_system_info():
-        return system_information
+    def get_system_info(self):
+        return self.system_information
+
+    def system_information_running(self):
+        num = self.system_information["core_num_logical"]
+        while True:
+            data = lib.getCurrentCpuUsage(num)
+            result = {
+                "cpuData": {
+                    "frequency": round(float(data.cpuData.frequency) / 1000, 2),
+                    "process_count": data.cpuData.process_count,
+                    "thread_count": data.cpuData.thread_count,
+                    "handle_count": data.cpuData.handle_count,
+                    "usage": {},
+                    "running_time": get_cpu_uptime()
+                },
+                "memoryData": {
+                    "available": data.memoryData.available,
+                    "available_2": data.memoryData.available_2,
+                    "total": psutil.virtual_memory().total / 1024 / 1024,
+                    "commited": data.memoryData.commited,
+                    "commited_percent": data.memoryData.commited_percent,
+                    "pool_paged": data.memoryData.pool_paged,
+                    "pool_not_paged": data.memoryData.pool_not_paged
+                },
+                "networkData": {
+                    "total": formatted(data.networkData.total),
+                    "sent": formatted(data.networkData.sent),
+                    "receive": formatted(data.networkData.receive)
+                }
+            }
+
+            for i in range(num + 1):  # 假设 num 为 5
+                result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 1)
+            socketIO.emit('system_information', result)
+
+
+def get_cpu_uptime():
+    uptime = datetime.datetime.now() - datetime.datetime.fromtimestamp(psutil.boot_time())
+    days, remainder = divmod(uptime.total_seconds(), 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(days)}:{int(hours)}:{int(minutes):02d}:{int(seconds):02d}"
+
+
+def system_information_static():
+    info = wmi.WMI().Win32_Processor()
+    data = {
+        "name": info[0].Name,
+        'basic_frequency': str(round(info[0].MaxClockSpeed / 1000, 2)) + 'GHZ',
+        "core_num": psutil.cpu_count(logical=False),
+        "core_num_logical": psutil.cpu_count(logical=True),
+        "l2_cache_size": str(info[0].L2CacheSize / 1024) + "MB",
+        "l3_cache_size": str(info[0].L3CacheSize / 1024) + "MB",
+        "cpu_virtual": "已启用" if info[0].VirtualizationFirmwareEnabled else "否"
+    }
+    return data
+
+
+def formatted(byte):
+    if byte < 8 * 1024:
+        return "{:.2f} B".format(byte / 8)
+    if byte < 8 * 1024 * 1024:
+        return "{:.2f} KB".format(byte / 8 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024:
+        return "{:.2f} MB".format(byte / 8 / 1024 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024:
+        return "{:.2f} GB".format(byte / 8 / 1024 / 1024 / 1024)
+    if byte < 8 * 1024 * 1024 * 1024 * 1024:
+        return "{:.2f} TB".format(byte / 8 / 1024 / 1024 / 1024 / 1024)

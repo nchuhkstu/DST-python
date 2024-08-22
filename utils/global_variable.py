@@ -1,4 +1,5 @@
 import ctypes
+import os
 
 
 class CpuData(ctypes.Structure):
@@ -48,7 +49,8 @@ class ProcessData(ctypes.Structure):
 server_dict = {}
 system_info = {}
 cluster_path, exe_path = None, None
-lib = ctypes.CDLL('../_internal/system.dll')
+work_path = os.getcwd()
+lib = ctypes.CDLL('./system.dll')
 # 定义 getCurrentCpuUsage 函数
 lib.getCurrentCpuUsage.argtypes = [ctypes.c_int]
 lib.getCurrentCpuUsage.restype = Data

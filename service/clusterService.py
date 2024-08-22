@@ -3,8 +3,8 @@ import os.path
 import shutil
 import time
 
-from controller.serverController import serverService
-from controller.systemController import systemService
+from utils.configLoader import g_variable
+from utils.global_variable import server_dict
 
 
 class ClusterService:
@@ -13,13 +13,13 @@ class ClusterService:
 
     @staticmethod
     def get():
-        if not os.path.exists(systemService.cluster_path + "/DST"):
+        if not os.path.exists(g_variable["cluster_path"] + "/DST"):
             return "false"
         clusters = []
-        cluster_names = sorted(os.listdir(systemService.cluster_path + "/DST"), key=len)
+        cluster_names = sorted(os.listdir(g_variable["cluster_path"] + "/DST"), key=len)
         for cluster_name in cluster_names:
             cluster = {"cluster_name": cluster_name, "current_players": "0", "status": "未启动", "days": "0"}
-            path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
+            path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
             with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
                 for line in file:
                     if "game_mode" in line:
@@ -43,16 +43,16 @@ class ClusterService:
                 for line in file:
                     if "server_port" in line and "master_server_port" not in line:
                         cluster["port"] = master_port + "," + line.split(" = ")[1].strip()
-            if cluster_name in serverService.server_dict:
-                cluster["current_players"] = serverService.server_dict[cluster_name]["current_players"]
-                cluster["status"] = serverService.server_dict[cluster_name]["status"]
+            if cluster_name in server_dict:
+                cluster["current_players"] = server_dict[cluster_name]["current_players"]
+                cluster["status"] = server_dict[cluster_name]["status"]
             clusters.append(cluster)
         return clusters
 
     @staticmethod
     def get_room(cluster_name):
         room = {"cluster_index": cluster_name}
-        path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
         with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
             for line in file:
                 if "cluster_name" in line:
@@ -90,7 +90,7 @@ class ClusterService:
     @staticmethod
     def set_room(cluster):
         convert_true_to_string(cluster)
-        path = os.path.join(systemService.cluster_path + "/DST", cluster["cluster_index"])
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster["cluster_index"])
         with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
             lines = file.readlines()
 
@@ -140,7 +140,7 @@ class ClusterService:
 
     @staticmethod
     def get_log(cluster_name):
-        path = os.path.join(systemService.cluster_path + "/DST", cluster_name, "Master", "server_log.txt")
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "server_log.txt")
         if not os.path.exists(path):
             return "日志不存在"
         log_list = []
@@ -156,18 +156,18 @@ class ClusterService:
         return log_list
 
     def add(self):
-        if not os.path.exists(systemService.cluster_path):
+        if not os.path.exists(g_variable["cluster_path"]):
             return {"status": "error", "message": "存档路径不存在"}
-        if not os.path.exists(systemService.cluster_path + "/DST"):
-            os.makedirs(systemService.cluster_path + "/DST")
+        if not os.path.exists(g_variable["cluster_path"] + "/DST"):
+            os.makedirs(g_variable["cluster_path"] + "/DST")
         index = 0
-        items = sorted(os.listdir(systemService.cluster_path + "/DST"), key=len)
+        items = sorted(os.listdir(g_variable["cluster_path"] + "/DST"), key=len)
         for item in items:
             for i in range(len(item)):
                 if item[i] == "_":
                     index = int(item[i + 1:])
         cluster_name = "Cluster_" + str(index + 1)
-        new_cluster_path = os.path.join(systemService.cluster_path + "/DST", cluster_name)
+        new_cluster_path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
         shutil.copytree(self.template_cluster_path, new_cluster_path)
         os.utime(new_cluster_path, times=(time.time(), time.time()))
         return {"status": "ok",
@@ -178,7 +178,7 @@ class ClusterService:
 
     @staticmethod
     def delete(cluster_name):
-        shutil.rmtree(os.path.join(systemService.cluster_path + "/DST", cluster_name))
+        shutil.rmtree(os.path.join(g_variable["cluster_path"] + "/DST", cluster_name))
         return {"status": "error", "message": "存档已删除"}
 
     def upload(self, file):
