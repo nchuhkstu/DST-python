@@ -18,5 +18,5 @@ def read_config(work_path):
 g_variable = {
     'cluster_path': read_config(os.getcwd())[0],
     'exe_path': read_config(os.getcwd())[1],
-    'port': read_config(os.getcwd())[2],
+    'port': int(read_config(os.getcwd())[2]),
 }

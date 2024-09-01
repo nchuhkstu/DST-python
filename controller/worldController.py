@@ -8,14 +8,13 @@ CORS(worldController)
 worldService = WorldService()
 
 
-@worldController.route('/world', methods=['GET'])
+@worldController.route('/world/<cluster_name>', methods=['GET'])
 def get(cluster_name):
     return worldService.get(cluster_name)
 
 
-@worldController.route('/world', methods=['POST'])
+@worldController.route('/world/<cluster_name>', methods=['POST'])
 def post(cluster_name):
-    cluster_path = request.get_json().get('cluster_path')
-    exe_path = request.get_json().get('exe_path')
-    return worldService.post(cluster_path, exe_path)
+    setting = request.json['setting']
+    return worldService.post(cluster_name, setting)
 
