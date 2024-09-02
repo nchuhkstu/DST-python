@@ -6,7 +6,6 @@ from utils.configLoader import g_variable
 
 class WorldService:
     def __init__(self):
-        self.get('Cluster_14')
         pass
 
     def submit(self):
