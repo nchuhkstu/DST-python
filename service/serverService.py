@@ -35,7 +35,7 @@ class ServerService:
 
     def execute_pipeline(self, world, cluster_name):
         command = self.exe_name + '.exe -console -cluster /DST/' + cluster_name + ' -shard ' + world
-        os.chdir(g_variable["exe_path"])
+        os.chdir(g_variable["exe_path"] + '/bin')
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True)
         with self.lock:
@@ -68,9 +68,9 @@ class ServerService:
         return proc.poll()
 
     def start(self, cluster_name):
+        if not os.path.exists(g_variable["exe_path"] + '/bin'):
+            return {"status": "error", "message": "专用服务器路径错误，启动失败"}
         server_dict[cluster_name] = {"status": "运行中"}
-        if not os.path.exists(g_variable["exe_path"]):
-            return {"status": "error", "message": "专用服务器可执行文件路径错误，启动失败"}
         threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start()
         while server_dict[cluster_name].get('master_process_index') is None:
             time.sleep(0.1)

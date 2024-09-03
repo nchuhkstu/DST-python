@@ -1,8 +1,8 @@
 import datetime
 import os.path
 import threading
-
 import psutil
+import requests
 import wmi
 
 from utils.configLoader import g_variable
@@ -16,9 +16,11 @@ class SystemService:
         threading.Thread(target=self.system_information_running, args=()).start()
 
     def get(self):
-        return {"cluster_path": g_variable["cluster_path"], "exe_path": g_variable["exe_path"]}
+        return {"steamCMD_path": g_variable["steamCMD_path"], "cluster_path": g_variable["cluster_path"],
+                "exe_path": g_variable["exe_path"]}
 
-    def post(self, path_cluster, path_exe):
+    def post(self, steamCMD_path, path_cluster, path_exe):
+        g_variable["steamCMD_path"] = steamCMD_path
         g_variable["cluster_path"] = path_cluster
         g_variable["exe_path"] = path_exe
         os.chdir(work_path)
@@ -27,7 +29,9 @@ class SystemService:
 
         with open("config.ini", "w", encoding="utf-8") as file:
             for line in lines:
-                if "cluster_path" in line:
+                if "steamCMD_path" in line:
+                    file.write(f'steamCMD_path = {g_variable["steamCMD_path"]}\n')
+                elif "cluster_path" in line:
                     file.write(f'cluster_path = {g_variable["cluster_path"]}\n')
                 elif "exe_path" in line:
                     file.write(f'exe_path = {g_variable["exe_path"]}\n')
@@ -70,6 +74,26 @@ class SystemService:
             for i in range(num + 1):  # 假设 num 为 5
                 result["cpuData"]["usage"][i] = round(float(data.cpuData.usage[i]), 1)
             socketIO.emit('system_information', result)
+
+    def downloading_steamCMD(self):
+        if not os.path.exists(g_variable["steamCMD_path"]):
+            return {"status": "ok", "message": "该路径不存在，下载错误"}
+        if os.path.isfile(os.path.join(g_variable["steamCMD_path"], "steamcmd.exe")):
+            return {"status": "ok", "message": "steamCMD已存于在该路径，请勿重复下载"}
+        try:
+            response = requests.get("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", stream=True)
+            response.raise_for_status()
+            with open(g_variable["steamCMD_path"], 'wb') as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+            return {"status": "ok", "message": "steamCMD已成功下载至 " + g_variable["steamCMD_path"]}
+        except Exception as e:
+            print(e)
+            return {"status": "ok", "message": "下载失败错误为:" + str(e)}
+
+
+    def update_game(self):
+        pass
 
 
 def get_cpu_uptime():

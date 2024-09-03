@@ -48,7 +48,6 @@ class ProcessData(ctypes.Structure):
 
 server_dict = {}
 system_info = {}
-cluster_path, exe_path = None, None
 work_path = os.getcwd()
 lib = ctypes.CDLL('./system.dll')
 # 定义 getCurrentCpuUsage 函数
