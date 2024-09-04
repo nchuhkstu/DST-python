@@ -5,6 +5,7 @@ import threading
 import time
 
 from utils.configLoader import g_variable
+from utils.dataBase import conn
 from utils.global_variable import lib, server_dict
 # from utils.dataBase import conn
 from utils.socketIO import socketIO
@@ -15,7 +16,7 @@ class ServerService:
         self.process_num = 0
         self.lock = threading.Lock()
         self.exe_name = "dontstarve_dedicated_server_nullrenderer"
-        # self.conn = conn
+        self.conn = conn
 
     def process_cpu_usage_thread(self, cluster_name, world):
         while cluster_name in server_dict:

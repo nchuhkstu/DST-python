@@ -4,7 +4,6 @@ import threading
 import psutil
 import requests
 import wmi
-
 from utils.configLoader import g_variable
 from utils.global_variable import work_path, lib
 from utils.socketIO import socketIO
@@ -81,7 +80,13 @@ class SystemService:
         if os.path.isfile(os.path.join(g_variable["steamCMD_path"], "steamcmd.exe")):
             return {"status": "ok", "message": "steamCMD已存于在该路径，请勿重复下载"}
         try:
-            response = requests.get("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", stream=True)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                              'Chrome/58.0.3029.110 Safari/537.3',
+                'Accept-Language': 'en-ZH,en;q=0.5',
+            }
+            response = requests.get("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", headers=headers,
+                                    stream=True)
             response.raise_for_status()
             with open(g_variable["steamCMD_path"], 'wb') as file:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -90,7 +95,6 @@ class SystemService:
         except Exception as e:
             print(e)
             return {"status": "ok", "message": "下载失败错误为:" + str(e)}
-
 
     def update_game(self):
         pass
