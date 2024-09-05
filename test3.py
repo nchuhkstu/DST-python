@@ -1,78 +1,42 @@
-from lupa import LuaRuntime
+import math
 
-# 创建 Lua 运行时
-lua = LuaRuntime(unpack_returned_tuples=True)
+BASE36_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-# 定义 Lua JSON 编码逻辑
-lua.execute('''
-json_private = {}
 
-function json_private.encodeString(s)
-    return s:gsub("\\\\", "\\\\\\\\"):gsub("\"", "\\\"") -- 转义反斜杠和引号
-end
+def base63_encode(string):
+    encoding = ""
+    for char in string:
 
-local function isArray(t)
-    local maxCount = 0
-    for k in pairs(t) do
-        if type(k) ~= "number" or k <= 0 or k % 1 ~= 0 then
-            return false, 0
-        end
-        if k > maxCount then
-            maxCount = k
-        end
-    end
-    return true, maxCount
-end
+        char_code = ord(char)
 
-local function isEncodable(v)
-    return type(v) ~= 'function' -- 不能编码函数
-end
+        while char_code > 0:
+            encoding += BASE36_CHARS[char_code % 36]
+            char_code //= 36
 
-function json.encode(v)
-    if v == nil then
-        return "null"
-    end
+        encoding = encoding[::-1]
 
-    local vtype = type(v)
+    while len(encoding) < 11:
+        encoding += "0"
 
-    if vtype == 'string' then
-        return '"' .. json_private.encodeString(v) .. '"'
-    end
+    return encoding[:12]
 
-    if vtype == 'number' or vtype == 'boolean' then
-        return tostring(v)
-    end
 
-    if vtype == 'table' then
-        local rval = {}
-        local bArray, maxCount = isArray(v)
-        if bArray then
-            for i = 1, maxCount do
-                table.insert(rval, json.encode(v[i]))
-            end
-        else
-            for i, j in pairs(v) do
-                if isEncodable(i) and isEncodable(j) then
-                    table.insert(rval, '"' .. json_private.encodeString(i) .. '":' .. json.encode(j))
-                end
-            end
-        end
-        if bArray then
-            return '[' .. table.concat(rval, ',') .. ']'
-        else
-            return '{' .. table.concat(rval, ',') .. '}'
-        end
-    end
+def base63_decode(string):
+    decoding = ""
 
-    error('encode attempt to encode unsupported type ' .. vtype .. ':' .. tostring(v))
-end
-''')
+    for i in range(0, len(string), 6):
+        index = string[i:i + 6]
 
-# 创建 Lua 表
-lua_table = lua.eval('{name = "Alice", age = 30, hobbies = {"reading", "gaming", "hiking"}, address = {city = "Wonderland", zip = "12345"}}')
+        char_code = 0
+        power = 1
 
-# 使用 Lua 的 json.encode 函数将 Lua 表转换为 JSON
-json_result = lua.globals().json.encode(lua_table)
+        while index != "":
+            char_code += BASE36_CHARS.index(index[0]) * power
+            power *= 63
+            index = index[1:]
 
-# 打印结果
-print(json_result)
+        decoding += chr(char_code)
+
+    return decoding
+
+print(base63_encode("KU_LFj7oMHe"))

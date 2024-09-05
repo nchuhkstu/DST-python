@@ -5,6 +5,7 @@ from controller.clusterController import clusterController
 from controller.htmlController import htmlController
 from controller.serverController import serverController
 from controller.systemController import systemController
+from controller.userController import userController
 from controller.worldController import worldController
 from utils.configLoader import g_variable
 from utils.socketIO import socketIO
@@ -16,6 +17,7 @@ app.register_blueprint(serverController)
 app.register_blueprint(clusterController)
 app.register_blueprint(systemController)
 app.register_blueprint(worldController)
+app.register_blueprint(userController)
 
 
 if __name__ == '__main__':
