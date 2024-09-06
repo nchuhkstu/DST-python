@@ -6,6 +6,7 @@ import time
 
 from utils.configLoader import g_variable
 from utils.dataBase import conn
+from utils.global_function import update_user_data
 from utils.global_variable import lib, server_dict
 # from utils.dataBase import conn
 from utils.socketIO import socketIO
@@ -63,8 +64,34 @@ class ServerService:
                         server_dict[cluster_name]['current_players'] += 1
                         # self.conn.cursor().execute(
                         #     "INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
+                        socketIO.emit('server_update', {
+                            "cluster_name": cluster_name,
+                            "current_players": server_dict[cluster_name]['current_players'],
+                        })
                     elif '[Leave Announcement]' in output:
                         server_dict[cluster_name]['current_players'] -= 1
+                        socketIO.emit('server_update', {
+                            "cluster_name": cluster_name,
+                            "current_players": server_dict[cluster_name]['current_players'],
+                        })
+                    elif 'INVALID_TOKEN' in output:
+                        server_dict[cluster_name]['status'] = "令牌错误"
+                        socketIO.emit('server_update', {
+                            "cluster_name": cluster_name,
+                            "status": server_dict[cluster_name]['status'],
+                        })
+                    elif 'SOCKET_PORT_ALREADY_IN_USE' in output:
+                        server_dict[cluster_name]['status'] = "端口错误"
+                        socketIO.emit('server_update', {
+                            "cluster_name": cluster_name,
+                            "status": server_dict[cluster_name]['status'],
+                        })
+                    elif 'Sim paused' in output:
+                        server_dict[cluster_name]['status'] = "运行中"
+                        socketIO.emit('server_update', {
+                            "cluster_name": cluster_name,
+                            "status": server_dict[cluster_name]['status'],
+                        })
                     if ']:' in output:
                         socketIO.emit('log', {
                             "cluster_name": cluster_name,
@@ -73,57 +100,17 @@ class ServerService:
                         })
         return proc.poll()
 
-    def update_user_data(self, cluster_name):
-        self.last_modified_times[cluster_name] = {}
+    @staticmethod
+    def update_user_data_running(cluster_name):
         while cluster_name in server_dict:
-            folder = os.path.join(g_variable["cluster_path"], "DST", cluster_name, "Master", "save", "session")
-            for root, dirs, files in os.walk(folder):
-                if root.count(os.sep) == folder.count(os.sep) + 2:
-                    for file in files:
-                        filepath = os.path.join(root, file)
-                        if filepath not in self.last_modified_times[cluster_name]:
-                            self.last_modified_times[cluster_name][filepath] = 0
-                        modified_time = os.stat(filepath).st_mtime
-                        # if modified_time != self.last_modified_times[cluster_name][filepath]:
-                        self.last_modified_times[cluster_name][filepath] = modified_time
-                        if file.startswith("000") and not file.endswith(".meta"):
-                            user_folder = os.path.basename(root)
-                            # print(os.path.join(root, file))
-                            with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as f:
-                                lines = f.readlines()
-                                for line in lines:
-                                    if "return" in line:
-                                        break
-                            start_index = line.find('n {') + 2
-                            brace_count = 0
-                            end_index = 0
-                            for i in range(start_index, len(line)):
-                                if line[i] == '{':
-                                    brace_count += 1
-                                elif line[i] == '}':
-                                    brace_count -= 1
-                                if brace_count == 0:
-                                    end_index = i + 1
-                                    break
-                            raw_user = line[start_index:end_index]
-                            # print(raw_user)
-                            lua_table = lua.eval(raw_user)
-                            user[cluster_name] = {}
-                            user[cluster_name][user_folder] = {
-                                "temperature": int(lua_table.data.temperature.current),
-                                "survivalTime": int(lua_table.data.age.age),
-                                "hunger": int(lua_table.data.hunger.hunger),
-                                "sanity": int(lua_table.data.sanity.current),
-                                "health": int(lua_table.data.health.health),
-                                "role": lua_table.prefab
-                            }
-                            socketIO.emit('user', user[cluster_name])
+            update_user_data(cluster_name)
+            socketIO.emit('user', user[cluster_name])
             time.sleep(480)
 
     def start(self, cluster_name):
         if not os.path.exists(g_variable["exe_path"] + '/bin'):
             return {"status": "error", "message": "专用服务器路径错误，启动失败"}
-        server_dict[cluster_name] = {"status": "运行中"}
+        server_dict[cluster_name] = {"status": "启动中"}
         threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start()
         while server_dict[cluster_name].get('master_process_index') is None:
             time.sleep(0.1)
@@ -133,7 +120,8 @@ class ServerService:
         while server_dict[cluster_name].get('caves_process_index') is None:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'caves')).start()
-        threading.Thread(target=self.update_user_data, args=(cluster_name,)).start()
+
+        threading.Thread(target=self.update_user_data_running, args=(cluster_name,)).start()
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
 
     def stop(self, cluster_name):
