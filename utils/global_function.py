@@ -2,13 +2,16 @@ import os
 
 from utils.configLoader import g_variable
 from lupa import LuaRuntime
-from utils.global_variable import user
+
+from utils.dataBase import conn
+from utils.global_variable import user, cache
 
 lua = LuaRuntime(unpack_returned_tuples=True)
 
 
 def update_user_data(cluster_name):
-    user[cluster_name] = {}
+    if cluster_name not in user:
+        user[cluster_name] = {}
     folder = os.path.join(g_variable["cluster_path"], "DST", cluster_name, "Master", "save", "session")
     for root, dirs, files in os.walk(folder):
         if root.count(os.sep) == folder.count(os.sep) + 2:
@@ -37,6 +40,15 @@ def update_user_data(cluster_name):
                     raw_user = line[start_index:end_index]
                     # print(raw_user)
                     lua_table = lua.eval(raw_user)
+
+                    cursor = conn.cursor()
+                    query = """SELECT name FROM users WHERE cluster_name = ? AND userid = ?"""
+                    values = (cluster_name, user_folder)
+                    cursor.execute(query, values)
+                    name = cursor.fetchone()[0]
+                    cursor.close()
+                    if cluster_name not in cache:
+                        cache[cluster_name] = {}
                     user[cluster_name][user_folder] = {
                         "temperature": int(lua_table.data.temperature.current),
                         "survivalTime": int(lua_table.data.age.age),
@@ -44,7 +56,8 @@ def update_user_data(cluster_name):
                         "sanity": int(lua_table.data.sanity.current),
                         "health": int(lua_table.data.health.health),
                         "role": lua_table.prefab,
-                        "online": user[cluster_name][user_folder].get("online", "outline"),
+                        "name": name,
+                        "online": "online" if name in cache[cluster_name] else user[cluster_name][user_folder].get("online", "outline"),
                         "player": "玩家"
                     }
     path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)

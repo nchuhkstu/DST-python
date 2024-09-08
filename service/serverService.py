@@ -7,8 +7,7 @@ import time
 from utils.configLoader import g_variable
 from utils.dataBase import conn
 from utils.global_function import update_user_data
-from utils.global_variable import lib, server_dict
-# from utils.dataBase import conn
+from utils.global_variable import lib, server_dict, cache
 from utils.socketIO import socketIO
 from lupa import LuaRuntime
 from utils.global_variable import user
@@ -21,7 +20,6 @@ class ServerService:
         self.process_num = 0
         self.lock = threading.Lock()
         self.exe_name = "dontstarve_dedicated_server_nullrenderer"
-        self.conn = conn
         self.last_modified_times = {}
 
     def process_cpu_usage_thread(self, cluster_name, world):
@@ -60,38 +58,75 @@ class ServerService:
                 break
             if output:
                 if world == 'Master':
+                    if 'Client authenticated' in output:
+                        start_index = output.find('(')
+                        userid = output[start_index + 1:start_index + 12]
+                        name = output[start_index + 14:-1]
+
+                        cursor = conn.cursor()
+                        query = """
+                            INSERT INTO users(cluster_name, userid, name) 
+                            SELECT ?, ?, ? 
+                            WHERE NOT EXISTS (
+                                SELECT 1 FROM users WHERE userid = ? AND cluster_name = ?
+                            )
+                        """
+                        values = (cluster_name, userid, name, userid, cluster_name)
+                        cursor.execute(query, values)
+                        conn.commit()
+                        cursor.close()
                     if '[Join Announcement]' in output:
+                        start_index = output.rfind(' ')
+                        name = output[start_index + 1:-1]
                         server_dict[cluster_name]['current_players'] += 1
-                        # self.conn.cursor().execute(
-                        #     "INSERT INTO chat (cluster_name, message, message_type) VALUES (cluster_name)")
-                        socketIO.emit('server_update', {
+                        if cluster_name not in cache:
+                            cache[cluster_name] = []
+                        if name not in cache[cluster_name]:
+                            cache[cluster_name].append(name)
+                        for key, value in user[cluster_name].items():
+                            if value["name"] == name:
+                                value["online"] = "online"
+                        socketIO.emit('server_update_current_players', {
                             "cluster_name": cluster_name,
                             "current_players": server_dict[cluster_name]['current_players'],
                         })
                     elif '[Leave Announcement]' in output:
+                        start_index = output.rfind(' ')
+                        name = output[start_index + 1:-1]
+                        cache[cluster_name].remove(name)
                         server_dict[cluster_name]['current_players'] -= 1
-                        socketIO.emit('server_update', {
+                        for key, value in user[cluster_name].items():
+                            if value["name"] == name:
+                                value["online"] = "outline"
+                        socketIO.emit('server_update_current_players', {
                             "cluster_name": cluster_name,
                             "current_players": server_dict[cluster_name]['current_players'],
                         })
                     elif 'INVALID_TOKEN' in output:
                         server_dict[cluster_name]['status'] = "令牌错误"
-                        socketIO.emit('server_update', {
+                        socketIO.emit('server_update_status', {
+                            "cluster_name": cluster_name,
+                            "status": server_dict[cluster_name]['status'],
+                        })
+                    elif 'shard mode startup: RakNet UDP startup failed: SOCKET_PORT_ALREADY_IN_USE' in output:
+                        server_dict[cluster_name]['status'] = "通信端口错误"
+                        socketIO.emit('server_update_status', {
                             "cluster_name": cluster_name,
                             "status": server_dict[cluster_name]['status'],
                         })
                     elif 'SOCKET_PORT_ALREADY_IN_USE' in output:
-                        server_dict[cluster_name]['status'] = "端口错误"
-                        socketIO.emit('server_update', {
+                        server_dict[cluster_name]['status'] = "世界端口错误"
+                        socketIO.emit('server_update_status', {
                             "cluster_name": cluster_name,
                             "status": server_dict[cluster_name]['status'],
                         })
                     elif 'Sim paused' in output:
-                        server_dict[cluster_name]['status'] = "运行中"
-                        socketIO.emit('server_update', {
-                            "cluster_name": cluster_name,
-                            "status": server_dict[cluster_name]['status'],
-                        })
+                        if server_dict[cluster_name]['status'] != "通信端口错误":
+                            server_dict[cluster_name]['status'] = "运行中"
+                            socketIO.emit('server_update_status', {
+                                "cluster_name": cluster_name,
+                                "status": server_dict[cluster_name]['status'],
+                            })
                     if ']:' in output:
                         socketIO.emit('log', {
                             "cluster_name": cluster_name,
@@ -111,6 +146,9 @@ class ServerService:
         if not os.path.exists(g_variable["exe_path"] + '/bin'):
             return {"status": "error", "message": "专用服务器路径错误，启动失败"}
         server_dict[cluster_name] = {"status": "启动中"}
+
+        threading.Thread(target=self.update_user_data_running, args=(cluster_name,)).start()
+
         threading.Thread(target=self.execute_pipeline, args=('Master', cluster_name,)).start()
         while server_dict[cluster_name].get('master_process_index') is None:
             time.sleep(0.1)
@@ -121,7 +159,6 @@ class ServerService:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'caves')).start()
 
-        threading.Thread(target=self.update_user_data_running, args=(cluster_name,)).start()
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
 
     def stop(self, cluster_name):

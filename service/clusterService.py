@@ -9,6 +9,7 @@ from utils.global_variable import server_dict
 
 class ClusterService:
     def __init__(self):
+        # self.template_cluster_path = os.getcwd() + "/_internal/cluster/template"
         self.template_cluster_path = os.getcwd() + "/cluster/template"
 
     @staticmethod
@@ -75,6 +76,8 @@ class ClusterService:
                     room["vote_enabled"] = line.split(" = ")[1].strip()
                 elif "vote_kick_enabled" in line:
                     room["vote_kick_enabled"] = line.split(" = ")[1].strip()
+                elif "master_port" in line:
+                    room["master_port"] = line.split(" = ")[1].strip()
 
         with open(os.path.join(path, "Master", "server.ini"), "r", encoding='utf-8') as file:
             for line in file:
@@ -116,6 +119,8 @@ class ClusterService:
                     file.write(f'vote_enabled = {cluster["vote_enabled"]}\n')
                 elif "vote_kick_enabled" in line:
                     file.write(f'vote_kick_enabled = {cluster["vote_kick_enabled"]}\n')
+                elif "master_port" in line:
+                    file.write(f'master_port = {cluster["master_port"]}\n')
                 else:
                     file.write(line)
 

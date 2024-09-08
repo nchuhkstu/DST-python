@@ -1,6 +1,5 @@
 from flask import Flask
 
-
 from controller.clusterController import clusterController
 from controller.htmlController import htmlController
 from controller.serverController import serverController

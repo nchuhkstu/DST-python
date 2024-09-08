@@ -1,6 +1,9 @@
 import datetime
 import os.path
+import subprocess
 import threading
+import zipfile
+
 import psutil
 import requests
 import wmi
@@ -76,6 +79,8 @@ class SystemService:
 
     def downloading_steamCMD(self):
         if not os.path.exists(g_variable["steamCMD_path"]):
+            os.makedirs(g_variable["steamCMD_path"])
+        if not os.path.exists(g_variable["steamCMD_path"]):
             return {"status": "ok", "message": "该路径不存在，下载错误"}
         if os.path.isfile(os.path.join(g_variable["steamCMD_path"], "steamcmd.exe")):
             return {"status": "ok", "message": "steamCMD已存于在该路径，请勿重复下载"}
@@ -88,9 +93,23 @@ class SystemService:
             response = requests.get("https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", headers=headers,
                                     stream=True)
             response.raise_for_status()
-            with open(g_variable["steamCMD_path"], 'wb') as file:
+            with open(os.path.join(g_variable["steamCMD_path"], "steamcmd.zip"), 'wb') as file:
                 for chunk in response.iter_content(chunk_size=8192):
                     file.write(chunk)
+            with zipfile.ZipFile(os.path.join(g_variable["steamCMD_path"], "steamcmd.zip"), 'r') as zip_ref:
+                zip_ref.extractall(g_variable["steamCMD_path"])  # 解压到指定目录
+
+            command = g_variable["steamCMD_path"] + '/steamcmd.exe -console'
+            proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
+                                    errors='ignore', universal_newlines=True)
+
+            while True:
+                output = proc.stdout.readline()
+                socketIO.emit('downloading', output.strip())
+                if 'Loading Steam API...OK' in output:
+                    proc.terminate()
+                    proc.kill()
+                    break
             return {"status": "ok", "message": "steamCMD已成功下载至 " + g_variable["steamCMD_path"]}
         except Exception as e:
             print(e)
