@@ -12,14 +12,17 @@ def read_config(work_path):
                 cluster_path = line.split(" = ")[1].strip()
             if "exe_path" in line:
                 exe_path = line.split(" = ")[1].strip()
+            if "mod_path" in line:
+                mod_path = line.split(" = ")[1].strip()
             if "port" in line:
                 port = line.split(" = ")[1].strip()
-    return steamCMD_path, cluster_path, exe_path, port
+    return steamCMD_path, cluster_path, exe_path, mod_path, port
 
 
 g_variable = {
     'steamCMD_path': read_config(os.getcwd())[0],
     'cluster_path': read_config(os.getcwd())[1],
     'exe_path': read_config(os.getcwd())[2],
-    'port': int(read_config(os.getcwd())[3]),
+    'mod_path': read_config(os.getcwd())[3],
+    'port': int(read_config(os.getcwd())[4]),
 }

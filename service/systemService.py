@@ -19,7 +19,7 @@ class SystemService:
 
     def get(self):
         return {"steamCMD_path": g_variable["steamCMD_path"], "cluster_path": g_variable["cluster_path"],
-                "exe_path": g_variable["exe_path"]}
+                "exe_path": g_variable["exe_path"], "mod_path": g_variable["mod_path"]}
 
     def post(self, steamCMD_path, path_cluster, path_exe):
         g_variable["steamCMD_path"] = steamCMD_path
@@ -37,6 +37,8 @@ class SystemService:
                     file.write(f'cluster_path = {g_variable["cluster_path"]}\n')
                 elif "exe_path" in line:
                     file.write(f'exe_path = {g_variable["exe_path"]}\n')
+                elif "mod_path" in line:
+                    file.write(f'mod_path = {g_variable["mod_path"]}\n')
                 else:
                     file.write(line)
         return {"status": "ok", "message": "保存成功"}
@@ -80,8 +82,6 @@ class SystemService:
     def downloading_steamCMD(self):
         if not os.path.exists(g_variable["steamCMD_path"]):
             os.makedirs(g_variable["steamCMD_path"])
-        if not os.path.exists(g_variable["steamCMD_path"]):
-            return {"status": "ok", "message": "该路径不存在，下载错误"}
         if os.path.isfile(os.path.join(g_variable["steamCMD_path"], "steamcmd.exe")):
             return {"status": "ok", "message": "steamCMD已存于在该路径，请勿重复下载"}
         try:

@@ -5,6 +5,7 @@ import time
 
 from utils.configLoader import g_variable
 from utils.global_variable import server_dict
+from utils.dataBase import conn
 
 
 class ClusterService:
@@ -183,8 +184,16 @@ class ClusterService:
 
     @staticmethod
     def delete(cluster_name):
+        if cluster_name in server_dict:
+            return {"status": "error", "message": "存档正在运行中"}
+        cursor = conn.cursor()
+        query = """ DELETE FROM users WHERE cluster_name = ? """
+        values = (cluster_name,)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
         shutil.rmtree(os.path.join(g_variable["cluster_path"] + "/DST", cluster_name))
-        return {"status": "error", "message": "存档已删除"}
+        return {"status": "ok", "message": "存档已删除"}
 
     def upload(self, file):
         pass
