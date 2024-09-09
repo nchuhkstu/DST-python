@@ -2,6 +2,7 @@ import datetime
 import os.path
 import subprocess
 import threading
+import time
 import zipfile
 
 import psutil
@@ -116,7 +117,22 @@ class SystemService:
             return {"status": "ok", "message": "下载失败错误为:" + str(e)}
 
     def update_game(self):
-        pass
+        if not os.path.exists(g_variable["exe_path"]):
+            os.makedirs(g_variable["exe_path"], exist_ok=True)
+        steamcmd_path = os.path.join(g_variable["steamCMD_path"], "steamcmd")
+        login_cmd = f"+login anonymous"
+        commands = ['+force_install_dir "' + g_variable["exe_path"] + '"', "+app_update 343050"]
+        full_command = [steamcmd_path, login_cmd] + list(commands)
+
+        proc = subprocess.Popen(full_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
+                                errors='ignore', universal_newlines=True, bufsize=1)
+        while True:
+            time.sleep(0.1)
+            line = proc.stdout.readline()
+            socketIO.emit('downloading', line.strip())
+            if 'Success' in line:
+                break
+        return {"status": "ok", "message": "steamCMD已成功下载至 " + g_variable["steamCMD_path"]}
 
 
 def get_cpu_uptime():
