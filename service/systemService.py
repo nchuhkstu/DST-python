@@ -132,7 +132,20 @@ class SystemService:
             socketIO.emit('downloading', line.strip())
             if 'Success' in line:
                 break
-        return {"status": "ok", "message": "steamCMD已成功下载至 " + g_variable["steamCMD_path"]}
+        return {"status": "ok", "message": "服务器已成功下载/更新 " + g_variable["steamCMD_path"]}
+
+    def game_version(self):
+        if not os.path.exists(g_variable["exe_path"]):
+            return {"status": "error", "message": "存档不存在"}
+
+        version_file_path = os.path.join(g_variable["exe_path"], "version.txt")
+        if not os.path.exists(version_file_path):
+            return {"status": "error", "message": "版本文件不存在"}
+
+        with open(version_file_path, 'r', encoding='utf-8') as file:
+            version = file.read().strip()
+
+        return {"status": "ok", "message": version}
 
 
 def get_cpu_uptime():

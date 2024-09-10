@@ -35,3 +35,15 @@ def downloading_steamCMD():
 def update_game():
     return systemService.update_game()
 
+
+@systemController.route('/system/game_version', methods=['GET'])
+def game_version():
+    client_ip = request.headers.get('X-Forwarded-For', None)
+    if client_ip:
+        # X-Forwarded-For 可能包含多个 IP 地址，取第一个即可
+        client_ip = client_ip.split(',')[0]
+    else:
+        client_ip = request.remote_addr
+    print(client_ip)
+    return systemService.game_version()
+

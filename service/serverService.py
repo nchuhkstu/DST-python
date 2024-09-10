@@ -6,7 +6,7 @@ import time
 
 from utils.configLoader import g_variable
 from utils.dataBase import conn
-from utils.global_function import update_user_data
+from utils.global_function import update_user_data, public_ip, send_remote_start
 from utils.global_variable import lib, server_dict, cache
 from utils.socketIO import socketIO
 from lupa import LuaRuntime
@@ -21,6 +21,7 @@ class ServerService:
         self.lock = threading.Lock()
         self.exe_name = "dontstarve_dedicated_server_nullrenderer"
         self.last_modified_times = {}
+        self.send_threads = {}
 
     def process_cpu_usage_thread(self, cluster_name, world):
         while cluster_name in server_dict:
@@ -159,6 +160,9 @@ class ServerService:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'caves')).start()
 
+        self.send_threads[cluster_name] = threading.Thread(target=send_remote_start, args=(cluster_name,))
+        self.send_threads[cluster_name].start()
+
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
 
     def stop(self, cluster_name):
@@ -178,6 +182,9 @@ class ServerService:
                 server_dict[key]['master_process_index'] = server_dict[key]['master_process_index'] - 2
                 server_dict[key]['caves_process_index'] = server_dict[key]['caves_process_index'] - 2
         self.process_num = self.process_num - 2
+
+        self.send_threads[cluster_name].stop()
+        self.send_threads[cluster_name] = None
 
         return {"status": "success", "message": f"{cluster_name} 已成功停止"}
 
