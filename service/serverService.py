@@ -3,10 +3,13 @@ import os
 import subprocess
 import threading
 import time
-
+import uuid
+import requests
+import urllib.request
+import json
 from utils.configLoader import g_variable
 from utils.dataBase import conn
-from utils.global_function import update_user_data, public_ip, send_remote_start
+from utils.global_function import update_user_data
 from utils.global_variable import lib, server_dict, cache
 from utils.socketIO import socketIO
 from lupa import LuaRuntime
@@ -160,7 +163,7 @@ class ServerService:
             time.sleep(0.1)
         threading.Thread(target=self.process_cpu_usage_thread, args=(cluster_name, 'caves')).start()
 
-        self.send_threads[cluster_name] = threading.Thread(target=send_remote_start, args=(cluster_name,))
+        self.send_threads[cluster_name] = threading.Thread(target=self.send_remote_start, args=(cluster_name,))
         self.send_threads[cluster_name].start()
 
         return {"status": "ok", "message": "存档：" + cluster_name + " 启动成功"}
@@ -183,13 +186,33 @@ class ServerService:
                 server_dict[key]['caves_process_index'] = server_dict[key]['caves_process_index'] - 2
         self.process_num = self.process_num - 2
 
-        self.send_threads[cluster_name].stop()
-        self.send_threads[cluster_name] = None
-
         return {"status": "success", "message": f"{cluster_name} 已成功停止"}
 
     def pause(self):
         pass
+
+    @staticmethod
+    def send_remote_start(cluster_name):
+        key = str(uuid.uuid4())
+        with open(os.path.join(g_variable["cluster_path"], "DST", cluster_name, "cluster.ini"), 'r',
+                  encoding='utf-8') as file:
+            for line in file:
+                if "cluster_name" in line:
+                    room_name = line.split(" = ")[1].strip()
+                    break
+        with urllib.request.urlopen("https://api.ipify.org?format=json") as response:
+            ip = json.loads(response.read().decode("utf-8"))["ip"]
+        while cluster_name in server_dict:
+            data = {
+                "key": key,
+                "ip": ip,
+                "room_name": room_name,
+                "time": int(time.time()),
+                "version": '1.4.0'
+            }
+            print(data)
+            requests.post("http://8.138.88.84:10000/start", json=data)
+            time.sleep(1)
 
     @staticmethod
     def save(cluster_name):

@@ -1,13 +1,6 @@
 import os
-import time
-import uuid
-
-import requests
-
 from utils.configLoader import g_variable
 from lupa import LuaRuntime
-import urllib.request
-import json
 from utils.dataBase import conn
 from utils.global_variable import user, cache
 
@@ -81,32 +74,4 @@ def update_user_data(cluster_name):
                 user[cluster_name][userid]["player"] = "服主"
 
 
-def public_ip():
-    try:
-        with urllib.request.urlopen("https://api.ipify.org?format=json") as response:
-            data = json.loads(response.read().decode("utf-8"))
-            return data["ip"]
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        return ""
 
-
-def send_remote_start(cluster_name):
-    key = str(uuid.uuid4())
-    with open(os.path.join(g_variable["cluster_path"], "DST", cluster_name, "cluster.ini"), 'r',
-              encoding='utf-8') as file:
-        for line in file:
-            if "cluster_name" in line:
-                room_name = line.split(" = ")[1].strip()
-                break
-    while True:
-
-        data = {
-            "key": key,
-            "ip": public_ip(),
-            "room_name": room_name,
-            "time": int(time.time())
-        }
-        print(data)
-        requests.post("123123", json=data)
-        time.sleep(1)
