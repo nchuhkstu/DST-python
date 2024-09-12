@@ -38,12 +38,5 @@ def update_game():
 
 @systemController.route('/system/game_version', methods=['GET'])
 def game_version():
-    client_ip = request.headers.get('X-Forwarded-For', None)
-    if client_ip:
-        # X-Forwarded-For 可能包含多个 IP 地址，取第一个即可
-        client_ip = client_ip.split(',')[0]
-    else:
-        client_ip = request.remote_addr
-    print(client_ip)
     return systemService.game_version()
 
