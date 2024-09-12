@@ -17,4 +17,12 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS chat
                  message TEXT,
                  message_type TEXT
                  )''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS mods
+                 (mod_id TEXT,
+                 img TEXT,
+                 title TEXT,
+                 author TEXT,
+                 content TEXT
+                 )''')
 conn.commit()
