@@ -1,5 +1,9 @@
+import os
+
 import requests
 from bs4 import BeautifulSoup
+
+from utils.configLoader import g_variable
 from utils.dataBase import conn
 
 
@@ -8,7 +12,17 @@ class ModService:
         pass
 
     @staticmethod
-    def get():
+    def get(cluster_name):
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
+        enabled_mods = {}
+        with open(path, "r", encoding='utf-8') as file:
+            for line in file:
+                if "workshop-" in line:
+                    start_index = line.find('-')
+                    end_index = line.rfind('"')
+                    mod_id = line[start_index + 1:end_index]
+                    print(mod_id)
+                    enabled_mods[mod_id] = True
         cursor = conn.cursor()
         query = "SELECT * FROM mods"
         cursor.execute(query)
@@ -22,13 +36,49 @@ class ModService:
                 "author": exist[3],
                 "content": exist[4],
                 "href": exist[5],
+                "status": exist[0] in enabled_mods
             }
             mods.append(mod)
         cursor.close()
         return mods
 
-    def add(self):
-        pass
+    @staticmethod
+    def enable(cluster_name, mod_id):
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
+        path2 = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Caves", "modoverrides.lua")
+        with open(path, "r", encoding='utf-8') as file:
+            lines = file.readlines()
+        lines[-2] = lines[-2] + '\t["workshop-' + mod_id + '"]={\n\t\tenabled=true\n\t}\n'
+        with open(path, "w", encoding='utf-8') as file:
+            file.writelines(lines)
+        with open(path2, "w", encoding='utf-8') as file:
+            file.writelines(lines)
+        return {"status": "ok", "message": "Enabled mod"}
+
+    @staticmethod
+    def disable(cluster_name, mod_id):
+        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
+        path2 = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Caves", "modoverrides.lua")
+        with open(path, "r", encoding='utf-8') as file:
+            lines = file.readlines()
+            flag1, flag2 = 0, 0
+            start_line, end_line = 1, 1
+            for line_number, line in enumerate(lines, start=1):  # 从1开始计数
+                if mod_id in line:
+                    flag1 = 1
+                    start_line = line_number
+                elif flag1 == 1 and 'enabled=true' in line:
+                    flag2 = 1
+                elif flag2 == 1 and '}' in line:
+                    end_line = line_number
+                    break
+        print(start_line, end_line)
+        lines = lines[:start_line - 1] + lines[end_line:]
+        with open(path, "w", encoding='utf-8') as file:
+            file.writelines(lines)
+        with open(path2, "w", encoding='utf-8') as file:
+            file.writelines(lines)
+        return {"status": "ok", "message": "Enabled mod"}
 
     @staticmethod
     def delete(mod_id):
@@ -45,11 +95,11 @@ class ModService:
                 'https://steamcommunity.com/workshop/browse/?appid=322330&browsesort=trend&section=readytouseitems'
                 '&actualsort=trend&p=' + str(current_page) + '&days=-1&numperpage=' + str(page_size)) \
             if content == '' \
-            else(
-                    'https://steamcommunity.com/workshop/browse/?appid=322330&searchtext=' + content +
-                    '&browsesort=trend&section=readytouseitems&created_date_range_filter_start=0&created_date_range_filter_end=0'
-                    '&updated_date_range_filter_start=0&updated_date_range_filter_end=0&actualsort=trend&p=1&days=-1'
-                    '&p=' + str(current_page) + '&numperpage=' + str(page_size))
+            else (
+                'https://steamcommunity.com/workshop/browse/?appid=322330&searchtext=' + content +
+                '&browsesort=trend&section=readytouseitems&created_date_range_filter_start=0&created_date_range_filter_end=0'
+                '&updated_date_range_filter_start=0&updated_date_range_filter_end=0&actualsort=trend&p=1&days=-1'
+                '&p=' + str(current_page) + '&numperpage=' + str(page_size))
         print(url)
         try:
             response = requests.get(url, proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'})

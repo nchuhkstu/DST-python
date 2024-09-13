@@ -17,9 +17,19 @@ def get_mods():
     return modService.get_mods(page_size, current_page, content)
 
 
-@modController.route('/mod', methods=['GET'])
-def get():
-    return modService.get()
+@modController.route('/mod/<cluster_name>', methods=['GET'])
+def get(cluster_name):
+    return modService.get(cluster_name)
+
+
+@modController.route('/mod/<cluster_name>/<mod_id>', methods=['GET'])
+def enable(cluster_name, mod_id):
+    return modService.enable(cluster_name, mod_id)
+
+
+@modController.route('/mod/disable/<cluster_name>/<mod_id>', methods=['GET'])
+def disable(cluster_name, mod_id):
+    return modService.disable(cluster_name, mod_id)
 
 
 @modController.route('/mod', methods=['POST'])
