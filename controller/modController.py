@@ -8,9 +8,13 @@ CORS(modController)
 modService = ModService()
 
 
-@modController.route('/mod/<page_size>/<current_page>', methods=['GET'])
-def get_mods(page_size, current_page):
-    return modService.get_mods(page_size, current_page)
+@modController.route('/mod/find', methods=['POST'])
+def get_mods():
+    page_size = request.form.get('pageSize')
+    current_page = request.form.get('currentPage')
+    content = request.form.get('content')
+    print(content)
+    return modService.get_mods(page_size, current_page, content)
 
 
 @modController.route('/mod', methods=['GET'])
@@ -24,4 +28,10 @@ def focus_mod():
     img = request.json.get('img')
     title = request.json.get('title')
     author = request.json.get('author')
-    return modService.focus_mod(mod_id, img, title, author)
+    href = request.json.get('href')
+    return modService.focus_mod(mod_id, img, title, author, href)
+
+
+@modController.route('/mod/<mod_id>', methods=['DELETE'])
+def delete_mod(mod_id):
+    return modService.delete(mod_id)

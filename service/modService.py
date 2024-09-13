@@ -20,7 +20,8 @@ class ModService:
                 "img": exist[1],
                 "title": exist[2],
                 "author": exist[3],
-                "content": exist[4]
+                "content": exist[4],
+                "href": exist[5],
             }
             mods.append(mod)
         cursor.close()
@@ -29,17 +30,27 @@ class ModService:
     def add(self):
         pass
 
-    def delete(self):
-        pass
-
-    def download(self):
-        pass
+    @staticmethod
+    def delete(mod_id):
+        cursor = conn.cursor()
+        query = "DELETE FROM mods WHERE mod_id = ?;"
+        cursor.execute(query, (mod_id,))
+        conn.commit()
+        cursor.close()
+        return {"status": "ok", "message": "取消订阅成功"}
 
     @staticmethod
-    def get_mods(page_size, current_page):
+    def get_mods(page_size, current_page, content):
         url = (
                 'https://steamcommunity.com/workshop/browse/?appid=322330&browsesort=trend&section=readytouseitems'
-                '&actualsort=trend&p=' + str(current_page) + '&days=-1&numperpage=' + str(page_size))
+                '&actualsort=trend&p=' + str(current_page) + '&days=-1&numperpage=' + str(page_size)) \
+            if content == '' \
+            else(
+                    'https://steamcommunity.com/workshop/browse/?appid=322330&searchtext=' + content +
+                    '&browsesort=trend&section=readytouseitems&created_date_range_filter_start=0&created_date_range_filter_end=0'
+                    '&updated_date_range_filter_start=0&updated_date_range_filter_end=0&actualsort=trend&p=1&days=-1'
+                    '&p=' + str(current_page) + '&numperpage=' + str(page_size))
+        print(url)
         try:
             response = requests.get(url, proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'})
             response.raise_for_status()
@@ -75,8 +86,7 @@ class ModService:
         return mods
 
     @staticmethod
-    def focus_mod(mod_id, img, title, author):
-        print('focus_mod:', mod_id, title, author)
+    def focus_mod(mod_id, img, title, author, href):
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                                  "Chrome/128.0.0.0 Safari/537.36", "content-type": "text/html;charset=UTF-8",
                    "Vary": "Accept-Encoding", "Accept-Language": "zh-CN,zh;q=0.9"}
@@ -93,13 +103,13 @@ class ModService:
         content = soup.find(class_='detailBox altFooter')
         cursor = conn.cursor()
         query = """
-            INSERT INTO mods(mod_id, img, title, author, content)
-            SELECT ?, ?, ?, ?, ?
+            INSERT INTO mods(mod_id, img, title, author, content, href)
+            SELECT ?, ?, ?, ?, ?, ?
             WHERE NOT EXISTS (
                 SELECT 1 FROM mods WHERE mod_id = ?
             )
         """
-        values = (mod_id, img, title, author, str(content), mod_id)
+        values = (mod_id, img, title, author, str(content), href, mod_id)
         cursor.execute(query, values)
         conn.commit()
         cursor.close()

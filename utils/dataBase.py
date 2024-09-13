@@ -23,6 +23,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS mods
                  img TEXT,
                  title TEXT,
                  author TEXT,
-                 content TEXT
+                 content TEXT,
+                 href TEXT
                  )''')
 conn.commit()
