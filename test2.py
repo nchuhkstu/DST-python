@@ -1,56 +1,24 @@
-import re
+import requests
 
-ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+def query_files(page, num, text):
+    url = "http://api.steampowered.com/IPublishedFileService/QueryFiles/v1/"
+    params = {
+        "key": "EBF3FBB49C03E71ABB75E6E3BFA35358",  # 替换为你的 Steam API 密钥
+        "appid": "322330",
+        "language": "6",
+        "return_tags": "false",
+        "return_vote_data": "false",
+        "return_children": "true",
+    }
 
-def encode(input_str):
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # 若请求失败，抛出异常
+        return response.json()  # 返回 JSON 格式的响应数据
+    except requests.RequestException as e:
+        print("请求失败:", e)
+        return None
 
-  # Remove disallowed chars
-  cleaned_str = re.sub(r"[^a-zA-Z0-9_]", "", input_str)
-
-  # Convert to uppercase
-  cleaned_str = cleaned_str.upper()
-
-  # Remove underscores
-  cleaned_str = cleaned_str.replace("_", "")
-
-  return cleaned_str
-
-def test():
-  inputs = [
-    "KU_3PjzsHmK",
-    "hello456_test78",
-    "numB3r5_andL3tt3rs"
-  ]
-
-  for input in inputs:
-    output = encode(input)
-    print(f"{input} -> {output}")
-
-test()
-
-A7G264USVLD8
-
-KU_0Z4zpzMe
-
-ALLOWED_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-A 11
-7 8
-K 21
-U 31
-
-A7H0T9AKA434
-KU_8EfLHH1a
-
-A7HFUMEL99V7
-KU_B_MTLAVd
-
-
-"A7IKVD3SIP38" "KU_LFj7oMHe"
-
-"A7IKVD3SJ3P2" "KU_LFj7oOyY"
-
-"A7IKVD3SK255" "KU_LFj7oWYb"
-
-7LITXkklwbj9Wzh
-7LITXkklwbjBhFy
+# 示例用法
+result = query_files(page=1, num=10, text="")
+print(result)

@@ -119,10 +119,8 @@ class SystemService:
     def update_game(self):
         if not os.path.exists(g_variable["exe_path"]):
             os.makedirs(g_variable["exe_path"], exist_ok=True)
-        steamcmd_path = os.path.join(g_variable["steamCMD_path"], "steamcmd")
-        login_cmd = f"+login anonymous"
-        commands = ['+force_install_dir "' + g_variable["exe_path"] + '"', "+app_update 343050"]
-        full_command = [steamcmd_path, login_cmd] + list(commands)
+        full_command = (f"{g_variable["steamCMD_path"] + "/steamcmd.exe"} +force_install_dir "
+                        + '"' + g_variable["exe_path"] + '"' + " +login anonymous +app_update 343050 validate +quit")
 
         proc = subprocess.Popen(full_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True, bufsize=1)

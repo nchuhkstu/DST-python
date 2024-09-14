@@ -1,4 +1,7 @@
 import os
+import shutil
+import subprocess
+import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -48,7 +51,7 @@ class ModService:
         path2 = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Caves", "modoverrides.lua")
         with open(path, "r", encoding='utf-8') as file:
             lines = file.readlines()
-        lines[-2] = lines[-2] + '\t["workshop-' + mod_id + '"]={\n\t\tenabled=true\n\t}\n'
+        lines[-2] = lines[-2] + '\t["workshop-' + mod_id + '"]={\n\t\tenabled=true\n\t},\n'
         with open(path, "w", encoding='utf-8') as file:
             file.writelines(lines)
         with open(path2, "w", encoding='utf-8') as file:
@@ -87,6 +90,8 @@ class ModService:
         cursor.execute(query, (mod_id,))
         conn.commit()
         cursor.close()
+        mod_path = os.path.join(g_variable["mod_path"], "workshop-" + mod_id)
+        shutil.rmtree(mod_path)
         return {"status": "ok", "message": "取消订阅成功"}
 
     @staticmethod
@@ -137,6 +142,29 @@ class ModService:
 
     @staticmethod
     def focus_mod(mod_id, img, title, author, href):
+        if not os.path.exists(g_variable["exe_path"]):
+            os.makedirs(g_variable["exe_path"], exist_ok=True)
+        full_command = (f"{g_variable["steamCMD_path"] + "/steamcmd.exe"} +force_install_dir "
+                        + '"' + g_variable["mod_path"] + '"' + " +login anonymous +workshop_download_item 322330 " + mod_id + " +quit")
+
+        proc = subprocess.Popen(full_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
+                                errors='ignore', universal_newlines=True, bufsize=1)
+        while True:
+            time.sleep(0.1)
+            line = proc.stdout.readline()
+            print(line)
+            if 'Success' in line:
+                break
+            elif 'Failure' in line:
+                return {"status": "error", "message": "订阅失败,未知错误"}
+            elif 'Timeout' in line:
+                return {"status": "error", "message": "订阅失败,连接超时，请重试"}
+
+        source_path = os.path.join(g_variable["mod_path"], "steamapps", "workshop", "content", "322330", mod_id)
+        if not os.path.exists(source_path):
+            return {"status": "error", "message": "订阅失败"}
+        target_path = os.path.join(g_variable["mod_path"], "workshop-" + mod_id)
+        shutil.move(str(source_path), str(target_path))
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                                  "Chrome/128.0.0.0 Safari/537.36", "content-type": "text/html;charset=UTF-8",
                    "Vary": "Accept-Encoding", "Accept-Language": "zh-CN,zh;q=0.9"}

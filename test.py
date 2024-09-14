@@ -1,30 +1,29 @@
 import requests
-from bs4 import BeautifulSoup
-import sys
 
-print("Python version:", sys.version)
+class ModInfo:
+    def __init__(self, id, name, author, desc, time, sub, img):
+        self.ID = id
+        self.Name = name
+        self.Author = author
+        self.Desc = desc
+        self.Time = time
+        self.Sub = sub
+        self.Img = img
 
-def get_mods(page_size, current_page):
-    url = (
-            'https://steamcommunity.com/workshop/browse/?appid=322330&browsesort=trend&section=readytouseitems'
-            '&actualsort=trend&p=' + str(current_page) + '&days=-1&numperpage=' + str(page_size))
-    response = requests.get(url)
-    html_content = response.text
-    soup = BeautifulSoup(html_content, 'html.parser')
-    elements_with_special_class = soup.find_all(class_='workshopItem')
+def search_mod_info_by_workshop_id(mod_id):
+    url = "http://api.steampowered.com/IPublishedFileService/GetDetails/v1/"
+    params = {
+        "key": "EBF3FBB49C03E71ABB75E6E3BFA35358",  # 替换为你的 Steam API 密钥
+        "language": "6",
+        "publishedfileids[0]": mod_id,
+        "return_children": "true",
+        "return_vote_data": "true",
+    }
 
-    mods = {}
-    for element in elements_with_special_class:
-        mod_id = element.find(class_='ugc').get('data-publishedfileid')
-        title = element.find(class_='workshopItemTitle ellipsis').text
-        author = element.find(class_='workshopItemAuthorName ellipsis').text
-        img = element.find(class_='workshopItemPreviewImage').get('src')
-        mods[mod_id] = {
-            'title': title,
-            'author': author,
-            'img': img,
-        }
-    return mods
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    result = response.json()
+    print(result['response']['publishedfiledetails'][0])
 
 
-print(get_mods(18, 1))
+mod_info = search_mod_info_by_workshop_id(1098843500)

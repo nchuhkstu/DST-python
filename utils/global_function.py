@@ -46,7 +46,7 @@ def update_user_data(cluster_name):
                     name = cursor.fetchone()[0]
                     cursor.close()
                     if cluster_name not in cache:
-                        cache[cluster_name] = {}
+                        cache[cluster_name] = []
                     user[cluster_name][user_folder] = {
                         "temperature": int(lua_table.data.temperature.current),
                         "survivalTime": int(lua_table.data.age.age),
