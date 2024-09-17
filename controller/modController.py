@@ -13,7 +13,6 @@ def get_mods():
     page_size = request.form.get('pageSize')
     current_page = request.form.get('currentPage')
     content = request.form.get('content')
-    print(content)
     return modService.get_mods(page_size, current_page, content)
 
 

@@ -52,7 +52,8 @@ user = {}
 work_path = os.getcwd()
 cache = {}
 # lib = ctypes.CDLL('./_internal/system.dll')
-lib = ctypes.CDLL('./system.dll')
+# lib = ctypes.CDLL('./system.dll')
+lib = ctypes.CDLL('./Project1.dll')
 # 定义 getCurrentCpuUsage 函数
 lib.getCurrentCpuUsage.argtypes = [ctypes.c_int]
 lib.getCurrentCpuUsage.restype = Data

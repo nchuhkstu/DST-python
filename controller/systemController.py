@@ -18,7 +18,8 @@ def post():
     steamCMD_path = request.get_json().get('steamCMD_path')
     cluster_path = request.get_json().get('cluster_path')
     exe_path = request.get_json().get('exe_path')
-    return systemService.post(steamCMD_path, cluster_path, exe_path)
+    mod_path = request.get_json().get('mod_path')
+    return systemService.post(steamCMD_path, cluster_path, exe_path, mod_path)
 
 
 @systemController.route('/system/information', methods=['GET'])

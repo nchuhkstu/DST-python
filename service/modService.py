@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import time
+import urllib.parse
 
 import requests
 from bs4 import BeautifulSoup
@@ -24,7 +25,6 @@ class ModService:
                     start_index = line.find('-')
                     end_index = line.rfind('"')
                     mod_id = line[start_index + 1:end_index]
-                    print(mod_id)
                     enabled_mods[mod_id] = True
         cursor = conn.cursor()
         query = "SELECT * FROM mods"
@@ -75,7 +75,6 @@ class ModService:
                 elif flag2 == 1 and '}' in line:
                     end_line = line_number
                     break
-        print(start_line, end_line)
         lines = lines[:start_line - 1] + lines[end_line:]
         with open(path, "w", encoding='utf-8') as file:
             file.writelines(lines)
@@ -102,12 +101,17 @@ class ModService:
             if content == '' \
             else (
                 'https://steamcommunity.com/workshop/browse/?appid=322330&searchtext=' + content +
-                '&browsesort=trend&section=readytouseitems&created_date_range_filter_start=0&created_date_range_filter_end=0'
-                '&updated_date_range_filter_start=0&updated_date_range_filter_end=0&actualsort=trend&p=1&days=-1'
+                '&browsesort=trend&section=readytouseitems&created_date_range_filter_start=0'
+                '&created_date_range_filter_end=0'
+                '&updated_date_range_filter_start=0&updated_date_range_filter_end=0&actualsort=trend&days=-1'
                 '&p=' + str(current_page) + '&numperpage=' + str(page_size))
         print(url)
+        headers = {'Accept-language': 'zh-CN,zh;q=0.9',
+                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                                 'Chrome/128.0.0.0 Safari/537.36'}
         try:
-            response = requests.get(url, proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'})
+            response = requests.get(url, proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'},
+                                    headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print("Error fetching data:", e)
@@ -144,8 +148,8 @@ class ModService:
     def focus_mod(mod_id, img, title, author, href):
         if not os.path.exists(g_variable["exe_path"]):
             os.makedirs(g_variable["exe_path"], exist_ok=True)
-        full_command = (f"{g_variable["steamCMD_path"] + "/steamcmd.exe"} +force_install_dir "
-                        + '"' + g_variable["mod_path"] + '"' + " +login anonymous +workshop_download_item 322330 " + mod_id + " +quit")
+        full_command = (f'{g_variable["steamCMD_path"]}/steamcmd.exe +force_install_dir '
+                        f'"{g_variable["mod_path"]}" +login anonymous +workshop_download_item 322330 {mod_id} +quit')
 
         proc = subprocess.Popen(full_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
                                 errors='ignore', universal_newlines=True, bufsize=1)

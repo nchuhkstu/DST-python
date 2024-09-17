@@ -200,18 +200,22 @@ class ServerService:
                 if "cluster_name" in line:
                     room_name = line.split(" = ")[1].strip()
                     break
-        with urllib.request.urlopen("https://api.ipify.org?format=json") as response:
-            ip = json.loads(response.read().decode("utf-8"))["ip"]
         while cluster_name in server_dict:
             data = {
                 "key": key,
-                "ip": ip,
                 "room_name": room_name,
                 "time": int(time.time()),
                 "version": '1.4.0'
             }
-            print(data)
-            requests.post("http://8.138.88.84:10000/start", json=data)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                              'Chrome/58.0.3029.110 Safari/537.3'}
+            try:
+                response = requests.post("http://8.138.88.84:10000/start", headers=headers, json=data, timeout=5,
+                                         verify=False)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                pass
             time.sleep(1)
 
     @staticmethod

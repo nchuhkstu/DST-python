@@ -22,10 +22,11 @@ class SystemService:
         return {"steamCMD_path": g_variable["steamCMD_path"], "cluster_path": g_variable["cluster_path"],
                 "exe_path": g_variable["exe_path"], "mod_path": g_variable["mod_path"]}
 
-    def post(self, steamCMD_path, path_cluster, path_exe):
+    def post(self, steamCMD_path, path_cluster, path_exe, mod_path):
         g_variable["steamCMD_path"] = steamCMD_path
         g_variable["cluster_path"] = path_cluster
         g_variable["exe_path"] = path_exe
+        g_variable["mod_path"] = mod_path
         os.chdir(work_path)
         with open("config.ini", "r", encoding="utf-8") as file:
             lines = file.readlines()
@@ -70,7 +71,7 @@ class SystemService:
                     "pool_not_paged": data.memoryData.pool_not_paged
                 },
                 "networkData": {
-                    "total": formatted(data.networkData.total),
+                    # "total": data.networkData.total,
                     "sent": formatted(data.networkData.sent),
                     "receive": formatted(data.networkData.receive)
                 }
@@ -113,13 +114,12 @@ class SystemService:
                     break
             return {"status": "ok", "message": "steamCMD已成功下载至 " + g_variable["steamCMD_path"]}
         except Exception as e:
-            print(e)
             return {"status": "ok", "message": "下载失败错误为:" + str(e)}
 
     def update_game(self):
         if not os.path.exists(g_variable["exe_path"]):
             os.makedirs(g_variable["exe_path"], exist_ok=True)
-        full_command = (f"{g_variable["steamCMD_path"] + "/steamcmd.exe"} +force_install_dir "
+        full_command = (f'{g_variable["steamCMD_path"] + "/steamcmd.exe"} +force_install_dir '
                         + '"' + g_variable["exe_path"] + '"' + " +login anonymous +app_update 343050 validate +quit")
 
         proc = subprocess.Popen(full_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf-8',
@@ -168,14 +168,14 @@ def system_information_static():
     return data
 
 
-def formatted(byte):
-    if byte < 8 * 1024:
-        return "{:.2f} B".format(byte / 8)
-    if byte < 8 * 1024 * 1024:
-        return "{:.2f} KB".format(byte / 8 / 1024)
-    if byte < 8 * 1024 * 1024 * 1024:
-        return "{:.2f} MB".format(byte / 8 / 1024 / 1024)
-    if byte < 8 * 1024 * 1024 * 1024:
-        return "{:.2f} GB".format(byte / 8 / 1024 / 1024 / 1024)
-    if byte < 8 * 1024 * 1024 * 1024 * 1024:
-        return "{:.2f} TB".format(byte / 8 / 1024 / 1024 / 1024 / 1024)
+def formatted(Byte):
+    if Byte * 8 < 1024:
+        return "{:.2f} bps".format(Byte * 8)
+    if Byte * 8 < 1024 * 1024:
+        return "{:.2f} Kbps".format(Byte * 8 / 1024)
+    if Byte * 8 < 1024 * 1024 * 1024:
+        return "{:.2f} mbps".format(Byte * 8 / 1024 / 1024)
+    if Byte * 8 < 1024 * 1024 * 1024:
+        return "{:.2f} gbps".format(Byte * 8 / 1024 / 1024 / 1024)
+    if Byte * 8 < 1024 * 1024 * 1024 * 1024:
+        return "{:.2f} tbps".format(Byte * 8 / 1024 / 1024 / 1024 / 1024)

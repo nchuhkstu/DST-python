@@ -2,7 +2,7 @@ import os
 
 
 def read_config(work_path):
-    steamCMD_path, cluster_path, exe_path = None, None, None
+    steamCMD_path, cluster_path, exe_path, mod_path = None, None, None, None
     with open(os.path.join(work_path, "config.ini"), "r", encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines:
