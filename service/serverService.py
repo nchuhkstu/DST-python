@@ -119,13 +119,13 @@ class ServerService:
                             "status": server_dict[cluster_name]['status'],
                         })
                     elif 'SOCKET_PORT_ALREADY_IN_USE' in output:
-                        server_dict[cluster_name]['status'] = "世界端口错误"
+                        server_dict[cluster_name]['status'] = "世界端口被占用"
                         socketIO.emit('server_update_status', {
                             "cluster_name": cluster_name,
                             "status": server_dict[cluster_name]['status'],
                         })
                     elif 'Sim paused' in output:
-                        if server_dict[cluster_name]['status'] != "通信端口错误":
+                        if server_dict[cluster_name]['status'] != "通信端口被占用":
                             server_dict[cluster_name]['status'] = "运行中"
                             socketIO.emit('server_update_status', {
                                 "cluster_name": cluster_name,

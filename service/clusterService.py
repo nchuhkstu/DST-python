@@ -36,7 +36,11 @@ class ClusterService:
                         cluster["server_name"] = line.split(" = ")[1].strip()
                     elif "max_players" in line:
                         cluster["max_players"] = line.split(" = ")[1].strip()
-            master_port = None
+            master_port, communicate_port = None, None
+            with open(os.path.join(path, "cluster.ini"), "r", encoding='utf-8') as file:
+                for line in file:
+                    if "master_port" in line:
+                        communicate_port = line.split(" = ")[1].strip()
             with open(os.path.join(path, "Master", "server.ini"), "r", encoding='utf-8') as file:
                 for line in file:
                     if "server_port" in line:
@@ -44,7 +48,7 @@ class ClusterService:
             with open(os.path.join(path, "Caves", "server.ini"), "r", encoding='utf-8') as file:
                 for line in file:
                     if "server_port" in line and "master_server_port" not in line:
-                        cluster["port"] = master_port + "," + line.split(" = ")[1].strip()
+                        cluster["port"] = master_port + "," + line.split(" = ")[1].strip() + "," + communicate_port
             if cluster_name in server_dict:
                 cluster["current_players"] = server_dict[cluster_name]["current_players"]
                 cluster["status"] = server_dict[cluster_name]["status"]
