@@ -1,5 +1,6 @@
 from flask import Flask
 
+from controller.chatController import chatController
 from controller.clusterController import clusterController
 from controller.htmlController import htmlController
 from controller.modController import modController
@@ -12,6 +13,7 @@ from utils.socketIO import socketIO
 
 app = Flask(__name__)
 socketIO.init_app(app)
+app.register_blueprint(chatController)
 app.register_blueprint(htmlController)
 app.register_blueprint(serverController)
 app.register_blueprint(clusterController)

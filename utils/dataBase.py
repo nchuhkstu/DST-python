@@ -15,7 +15,8 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS chat
                  (cluster_name TEXT,
                  name TEXT,
                  message TEXT,
-                 message_type TEXT
+                 message_type TEXT,
+                 time TEXT
                  )''')
 
 cursor.execute('''CREATE TABLE IF NOT EXISTS mods

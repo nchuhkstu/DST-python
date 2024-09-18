@@ -131,6 +131,27 @@ class ServerService:
                                 "cluster_name": cluster_name,
                                 "status": server_dict[cluster_name]['status'],
                             })
+                    elif '[Say]' in output:
+                        start_index = output.find(')')
+                        end_index = output.rfind(': ')
+                        name = output[start_index + 2:end_index]
+                        message = output[end_index + 2:-1]
+                        message_type = 'chat'
+                        cursor = conn.cursor()
+                        query = """INSERT INTO chat(cluster_name, name, message, message_type, time)
+                                        VALUES (?, ?, ?, ?, ?)
+                                """
+                        values = (cluster_name, name, message, message_type, time.time())
+                        cursor.execute(query, values)
+                        conn.commit()
+                        cursor.close()
+                        socketIO.emit('chat', {
+                            "cluster_name": cluster_name,
+                            "name": name,
+                            "message": message,
+                            "message_type": message_type,
+                            "time": time.time()
+                        })
                     if ']:' in output:
                         socketIO.emit('log', {
                             "cluster_name": cluster_name,
