@@ -3,6 +3,9 @@ import os.path
 import shutil
 import time
 
+import numpy as np
+from PIL import Image
+import matplotlib.pyplot as plt
 from utils.configLoader import g_variable
 from utils.global_variable import server_dict
 from utils.dataBase import conn
@@ -54,6 +57,43 @@ class ClusterService:
                 cluster["status"] = server_dict[cluster_name]["status"]
             clusters.append(cluster)
         return clusters
+
+    @staticmethod
+    def get_map(cluster_name):
+        if cluster_name not in server_dict:
+            return {"status": "error", "message": "未启动"}
+
+            # 获取数据并确保其为 uint8 类型
+        data = np.array(server_dict[cluster_name]["master_map"], dtype=np.uint8)
+        color_map = {
+            3: (77,64,43),
+            4: (117, 107, 87),
+            5: (88,67,35),
+            6: (60, 83, 51),
+            7: (46, 53, 24),
+            8: (46, 52, 82),
+            30: (68,52,35),
+            31: (115, 93, 49),
+            34: (74,67,44),
+            42:(74,67,44),
+            43: (148, 209, 214),
+            44: (75,66,44),
+            201: (23, 51, 62),
+            202: (23, 51, 62),
+            203: (14, 34, 61),
+            204: (19, 20, 40),
+            205: (40, 87, 93),
+            207: (8, 8, 14),
+            208: (40,  87,  93),
+        }
+        colored_data = np.zeros((data.shape[0], data.shape[1], 3), dtype=np.uint8)
+        for value, color in color_map.items():
+            colored_data[data == value] = color
+        img = Image.fromarray(colored_data)
+        img.save('custom_rgb_matrix_image.png')
+        img.show()
+
+        return server_dict[cluster_name]["master_map"]
 
     @staticmethod
     def get_room(cluster_name):
@@ -209,3 +249,20 @@ def convert_true_to_string(d):
             d[key] = "true"
         elif value is False:
             d[key] = "false"
+
+
+def map_value_to_color(value):
+    if value == 201:
+        return 23, 51, 62, 102
+    elif value == 202:
+        return 23, 51, 62, 102
+    elif value == 203:
+        return 14, 34, 61, 204
+    elif value == 204:
+        return 19, 20, 40, 230
+    elif value == 205:
+        return 40, 87, 93, 51
+    elif value == 207:
+        return 8, 8, 14, 51
+    else:
+        return 0, 0, 0  # 蓝色

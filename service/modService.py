@@ -110,8 +110,11 @@ class ModService:
                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                                  'Chrome/128.0.0.0 Safari/537.36'}
         try:
-            response = requests.get(url, proxies={'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'},
-                                    headers=headers)
+            proxies = {'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'}
+            try:
+                response = requests.get(url, proxies=proxies, headers=headers)
+            except requests.exceptions.ProxyError:
+                response = requests.get(url, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print("Error fetching data:", e)

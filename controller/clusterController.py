@@ -24,6 +24,11 @@ def get():
     return clusterService.get()
 
 
+@clusterController.route('/cluster/getMap/<cluster_name>', methods=['GET'])
+def get_map(cluster_name):
+    return clusterService.get_map(cluster_name=cluster_name)
+
+
 @clusterController.route('/cluster/<cluster_name>', methods=['GET'])
 def get_room(cluster_name):
     return clusterService.get_room(cluster_name=cluster_name)

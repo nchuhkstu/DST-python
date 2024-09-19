@@ -131,6 +131,7 @@ class ServerService:
                                 "cluster_name": cluster_name,
                                 "status": server_dict[cluster_name]['status'],
                             })
+                            self.map(cluster_name)
                     elif '[Say]' in output:
                         start_index = output.find(')')
                         end_index = output.rfind(': ')
@@ -152,7 +153,12 @@ class ServerService:
                             "message_type": message_type,
                             "time": time.time()
                         })
-                    if ']:' in output:
+                    elif 'map:' in output and 'rowString' not in output:
+                        start_index = output.find('map:')
+                        line = output[start_index + 4:-1]
+                        array = line.split(' ')
+                        server_dict[cluster_name]["master_map"].append(array)
+                    if ']:' in output and 'map:' not in output:
                         socketIO.emit('log', {
                             "cluster_name": cluster_name,
                             "time": output.strip().split("]:")[0][1:],
@@ -209,8 +215,21 @@ class ServerService:
 
         return {"status": "success", "message": f"{cluster_name} 已成功停止"}
 
-    def pause(self):
-        pass
+    def map(self, cluster_name):
+        if cluster_name not in server_dict:
+            print("尚未启动")
+            return {"status": "error", "message": f"存档：{cluster_name} 尚未启动"}
+        server_dict[cluster_name]['master_map'] = []
+        lua_code = ('local width, height = TheWorld.Map:GetSize() local mapArray = {}  for x = 0, width do     '
+                    'mapArray[x] = {}     for y = 0, height do         local tile = TheWorld.Map:GetTile(x, '
+                    'y)         mapArray[x][y] = tile     end end  for x = 0, width do     local rowString = '
+                    'table.concat(mapArray[x], " ")     print("map:" .. rowString) end')
+        server_dict[cluster_name]['master_proc'].stdin.write(lua_code + '\n')
+        server_dict[cluster_name]['master_proc'].stdin.flush()
+        server_dict[cluster_name]['caves_proc'].stdin.write(lua_code + '\n')
+        server_dict[cluster_name]['caves_proc'].stdin.flush()
+        print("地图数据")
+        return {"status": "ok", "message": "存档: " + cluster_name + "地图数据"}
 
     @staticmethod
     def send_remote_start(cluster_name):
@@ -233,7 +252,7 @@ class ServerService:
                               'Chrome/58.0.3029.110 Safari/537.3'}
             try:
                 response = requests.post("http://8.138.88.84:10000/start", headers=headers, json=data, timeout=5,
-                                         verify=False)
+                                         proxies=None, verify=False)
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 pass
@@ -261,6 +280,7 @@ class ServerService:
 
     @staticmethod
     def custom_command(cluster_name, command):
+        print(command)
         server_dict[cluster_name]['master_proc'].stdin.write(command + '\n')
         server_dict[cluster_name]['master_proc'].stdin.flush()
         server_dict[cluster_name]['caves_proc'].stdin.write(command + '\n')
