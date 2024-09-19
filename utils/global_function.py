@@ -58,7 +58,7 @@ def update_user_data(cluster_name):
                         "online": "online" if name in cache[cluster_name] else user[cluster_name][user_folder].get("online", "outline"),
                         "player": "玩家"
                     }
-    path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
+    path = os.path.join(g_variable["cluster_path"], cluster_name)
     with open(os.path.join(path, "adminlist.txt"), "r", encoding='utf-8') as file:
         lines = file.readlines()
         for line in lines:

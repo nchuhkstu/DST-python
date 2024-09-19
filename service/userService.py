@@ -16,7 +16,7 @@ class UserService:
 
     @staticmethod
     def set_admin(cluster_name, userid):
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
+        path = os.path.join(g_variable["cluster_path"], cluster_name)
         with open(os.path.join(path, "adminlist.txt"), "r", encoding='utf-8') as file:
             lines = file.readlines()
             for line in lines:
@@ -30,7 +30,7 @@ class UserService:
 
     @staticmethod
     def delete_admin(cluster_name, userid):
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
+        path = os.path.join(g_variable["cluster_path"], cluster_name)
         with open(os.path.join(path, "adminlist.txt"), "r", encoding='utf-8') as file:
             lines = file.readlines()
         with open(os.path.join(path, "adminlist.txt"), "w", encoding='utf-8') as file:

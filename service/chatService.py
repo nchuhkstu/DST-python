@@ -25,5 +25,11 @@ class ChatService:
                 "message_type": result[3],
                 "time": result[4]
             })
+
+        query_count = """SELECT COUNT(*) FROM chat
+                             WHERE cluster_name = ? AND time <= ?"""
+        values_count = (cluster_name, time)
+        cursor.execute(query_count, values_count)
+        total_count = cursor.fetchone()[0]
         cursor.close()
-        return messages
+        return {"status": "ok", "messages": messages, "total": total_count}

@@ -17,7 +17,7 @@ class ModService:
 
     @staticmethod
     def get(cluster_name):
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
+        path = os.path.join(g_variable["cluster_path"], cluster_name, "Master", "modoverrides.lua")
         enabled_mods = {}
         with open(path, "r", encoding='utf-8') as file:
             for line in file:
@@ -47,8 +47,8 @@ class ModService:
 
     @staticmethod
     def enable(cluster_name, mod_id):
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
-        path2 = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Caves", "modoverrides.lua")
+        path = os.path.join(g_variable["cluster_path"], cluster_name, "Master", "modoverrides.lua")
+        path2 = os.path.join(g_variable["cluster_path"], cluster_name, "Caves", "modoverrides.lua")
         with open(path, "r", encoding='utf-8') as file:
             lines = file.readlines()
         lines[-2] = lines[-2] + '\t["workshop-' + mod_id + '"]={\n\t\tenabled=true\n\t},\n'
@@ -60,8 +60,8 @@ class ModService:
 
     @staticmethod
     def disable(cluster_name, mod_id):
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Master", "modoverrides.lua")
-        path2 = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name, "Caves", "modoverrides.lua")
+        path = os.path.join(g_variable["cluster_path"], cluster_name, "Master", "modoverrides.lua")
+        path2 = os.path.join(g_variable["cluster_path"], cluster_name, "Caves", "modoverrides.lua")
         with open(path, "r", encoding='utf-8') as file:
             lines = file.readlines()
             flag1, flag2 = 0, 0

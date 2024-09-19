@@ -215,7 +215,7 @@ class ServerService:
     @staticmethod
     def send_remote_start(cluster_name):
         key = str(uuid.uuid4())
-        with open(os.path.join(g_variable["cluster_path"], "DST", cluster_name, "cluster.ini"), 'r',
+        with open(os.path.join(g_variable["cluster_path"], cluster_name, "cluster.ini"), 'r',
                   encoding='utf-8') as file:
             for line in file:
                 if "cluster_name" in line:

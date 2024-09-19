@@ -15,7 +15,7 @@ class WorldService:
         overrides1 = {}
         overrides2 = {}
         overrides = {}
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
+        path = os.path.join(g_variable["cluster_path"], cluster_name)
         with open(os.path.join(path, "Master", "leveldataoverride.lua"), "r", encoding='utf-8') as file:
             content = file.read()
         # 使用正则表达式提取 overrides 中的键值对
@@ -47,7 +47,7 @@ class WorldService:
 
         overrides1 = {key: value for d in setting['overrides1'] for key, value in d.items()}
         overrides2 = {key: value for d in setting['overrides2'] for key, value in d.items()}
-        path = os.path.join(g_variable["cluster_path"] + "/DST", cluster_name)
+        path = os.path.join(g_variable["cluster_path"], cluster_name)
         with open(os.path.join(path, "Master", "leveldataoverride.lua"), "r", encoding='utf-8') as file:
             lines = file.readlines()
 
