@@ -1,11 +1,13 @@
+import io
 import json
 import os.path
 import shutil
 import time
 
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
+from PIL import Image, ImageFilter
+from flask import send_file
+
 from utils.configLoader import g_variable
 from utils.global_variable import server_dict
 from utils.dataBase import conn
@@ -60,11 +62,16 @@ class ClusterService:
 
     @staticmethod
     def get_map(cluster_name):
-        if cluster_name not in server_dict:
-            return {"status": "error", "message": "未启动"}
-
-            # 获取数据并确保其为 uint8 类型
-        data = np.array(server_dict[cluster_name]["master_map"], dtype=np.uint8)
+        cursor = conn.cursor()
+        query = """SELECT * FROM maps WHERE cluster_name = ?"""
+        values = (cluster_name,)
+        cursor.execute(query, values)
+        points = cursor.fetchone()
+        if not points:
+            return {"status": "error", "message": "地图尚未生成"}
+        conn.commit()
+        cursor.close()
+        data = np.array(json.loads(points[1]), dtype=np.uint8)
         color_map = {
             3: (77,64,43),
             4: (117, 107, 87),
@@ -90,10 +97,11 @@ class ClusterService:
         for value, color in color_map.items():
             colored_data[data == value] = color
         img = Image.fromarray(colored_data)
-        img.save('custom_rgb_matrix_image.png')
-        img.show()
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='PNG')
+        img_bytes.seek(0)
+        return send_file(img_bytes, mimetype='image/png')
 
-        return server_dict[cluster_name]["master_map"]
 
     @staticmethod
     def get_room(cluster_name):

@@ -27,4 +27,9 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS mods
                  content TEXT,
                  href TEXT
                  )''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS maps
+                 (cluster_name TEXT,
+                 points TEXT
+                 )''')
 conn.commit()

@@ -153,6 +153,27 @@ class ServerService:
                             "message_type": message_type,
                             "time": time.time()
                         })
+                    elif 'map:65535 65535 65535' in output:
+                        cursor = conn.cursor()
+                        query = """SELECT COUNT(*) FROM maps WHERE cluster_name = ?"""
+                        values = (cluster_name, )
+                        cursor.execute(query, values)
+                        exists = cursor.fetchone()[0]  # 获取查询结果
+                        cursor.close()
+                        if exists == 0:
+                            cursor = conn.cursor()
+                            query = """INSERT INTO maps (cluster_name, points) VALUES (?, ?)"""
+                            values = (cluster_name, json.dumps(server_dict[cluster_name]["master_map"]))
+                            cursor.execute(query, values)
+                            conn.commit()
+                            cursor.close()
+                        else:
+                            cursor = conn.cursor()
+                            query = """UPDATE maps SET points = ? WHERE cluster_name = ?"""
+                            values = (cluster_name, json.dumps(server_dict[cluster_name]["master_map"]))
+                            cursor.execute(query, values)
+                            conn.commit()
+                            cursor.close()
                     elif 'map:' in output and 'rowString' not in output:
                         start_index = output.find('map:')
                         line = output[start_index + 4:-1]
@@ -217,9 +238,8 @@ class ServerService:
 
     def map(self, cluster_name):
         if cluster_name not in server_dict:
-            print("尚未启动")
-            return {"status": "error", "message": f"存档：{cluster_name} 尚未启动"}
-        server_dict[cluster_name]['master_map'] = []
+            return
+        server_dict[cluster_name]["master_map"] = []
         lua_code = ('local width, height = TheWorld.Map:GetSize() local mapArray = {}  for x = 0, width do     '
                     'mapArray[x] = {}     for y = 0, height do         local tile = TheWorld.Map:GetTile(x, '
                     'y)         mapArray[x][y] = tile     end end  for x = 0, width do     local rowString = '
@@ -228,8 +248,6 @@ class ServerService:
         server_dict[cluster_name]['master_proc'].stdin.flush()
         server_dict[cluster_name]['caves_proc'].stdin.write(lua_code + '\n')
         server_dict[cluster_name]['caves_proc'].stdin.flush()
-        print("地图数据")
-        return {"status": "ok", "message": "存档: " + cluster_name + "地图数据"}
 
     @staticmethod
     def send_remote_start(cluster_name):
