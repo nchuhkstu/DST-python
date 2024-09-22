@@ -2,7 +2,7 @@ import os
 from utils.configLoader import g_variable
 from lupa import LuaRuntime
 from utils.dataBase import conn
-from utils.global_variable import user, cache
+from utils.global_variable import user, cache, server_dict
 
 lua = LuaRuntime(unpack_returned_tuples=True)
 
@@ -10,7 +10,7 @@ lua = LuaRuntime(unpack_returned_tuples=True)
 def update_user_data(cluster_name):
     if cluster_name not in user:
         user[cluster_name] = {}
-    folder = os.path.join(g_variable["cluster_path"], "DST", cluster_name, "Master", "save", "session")
+    folder = os.path.join(g_variable["cluster_path"], cluster_name, "Master", "save", "session")
     for root, dirs, files in os.walk(folder):
         if root.count(os.sep) == folder.count(os.sep) + 2:
             for file in files:
@@ -55,7 +55,8 @@ def update_user_data(cluster_name):
                         "health": int(lua_table.data.health.health),
                         "role": lua_table.prefab,
                         "name": name,
-                        "online": "online" if name in cache[cluster_name] else user[cluster_name][user_folder].get("online", "outline"),
+                        "online": "online" if name in cache[cluster_name] else user[cluster_name][user_folder].get(
+                            "online", "outline"),
                         "player": "玩家"
                     }
     path = os.path.join(g_variable["cluster_path"], cluster_name)
@@ -74,4 +75,15 @@ def update_user_data(cluster_name):
                 user[cluster_name][userid]["player"] = "服主"
 
 
-
+def generate_map(cluster_name):
+    if cluster_name not in server_dict:
+        return
+    server_dict[cluster_name]["master_map"] = []
+    lua_code = ('local width, height = TheWorld.Map:GetSize() local mapArray = {}  for x = 0, width do     '
+                'mapArray[x] = {}     for y = 0, height do         local tile = TheWorld.Map:GetTile(x, '
+                'y)         mapArray[x][y] = tile     end end  for x = 0, width do     local rowString = '
+                'table.concat(mapArray[x], " ")     print("map:" .. rowString) end')
+    server_dict[cluster_name]['master_proc'].stdin.write(lua_code + '\n')
+    server_dict[cluster_name]['master_proc'].stdin.flush()
+    server_dict[cluster_name]['caves_proc'].stdin.write(lua_code + '\n')
+    server_dict[cluster_name]['caves_proc'].stdin.flush()

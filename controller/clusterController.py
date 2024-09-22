@@ -29,6 +29,11 @@ def get_map(cluster_name):
     return clusterService.get_map(cluster_name=cluster_name)
 
 
+@clusterController.route('/cluster/refreshMap/<cluster_name>', methods=['GET'])
+def refresh_map(cluster_name):
+    return clusterService.refresh_map(cluster_name=cluster_name)
+
+
 @clusterController.route('/cluster/<cluster_name>', methods=['GET'])
 def get_room(cluster_name):
     return clusterService.get_room(cluster_name=cluster_name)

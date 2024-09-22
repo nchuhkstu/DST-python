@@ -9,7 +9,7 @@ import urllib.request
 import json
 from utils.configLoader import g_variable
 from utils.dataBase import conn
-from utils.global_function import update_user_data
+from utils.global_function import update_user_data, generate_map
 from utils.global_variable import lib, server_dict, cache
 from utils.socketIO import socketIO
 from lupa import LuaRuntime
@@ -94,6 +94,23 @@ class ServerService:
                             "cluster_name": cluster_name,
                             "current_players": server_dict[cluster_name]['current_players'],
                         })
+                        message = '加入游戏'
+                        message_type = 'join'
+                        cursor = conn.cursor()
+                        query = """INSERT INTO chat(cluster_name, name, message, message_type, time)
+                                                                VALUES (?, ?, ?, ?, ?)
+                                                        """
+                        values = (cluster_name, name, message, message_type, time.time())
+                        cursor.execute(query, values)
+                        conn.commit()
+                        cursor.close()
+                        socketIO.emit('chat', {
+                            "cluster_name": cluster_name,
+                            "name": name,
+                            "message": message,
+                            "message_type": message_type,
+                            "time": time.time()
+                        })
                     elif '[Leave Announcement]' in output:
                         start_index = output.rfind(' ')
                         name = output[start_index + 1:-1]
@@ -105,6 +122,23 @@ class ServerService:
                         socketIO.emit('server_update_current_players', {
                             "cluster_name": cluster_name,
                             "current_players": server_dict[cluster_name]['current_players'],
+                        })
+                        message = '离开游戏'
+                        message_type = 'join'
+                        cursor = conn.cursor()
+                        query = """INSERT INTO chat(cluster_name, name, message, message_type, time)
+                                                                                        VALUES (?, ?, ?, ?, ?)
+                                                                                """
+                        values = (cluster_name, name, message, message_type, time.time())
+                        cursor.execute(query, values)
+                        conn.commit()
+                        cursor.close()
+                        socketIO.emit('chat', {
+                            "cluster_name": cluster_name,
+                            "name": name,
+                            "message": message,
+                            "message_type": message_type,
+                            "time": time.time()
                         })
                     elif 'INVALID_TOKEN' in output:
                         server_dict[cluster_name]['status'] = "令牌错误"
@@ -131,7 +165,7 @@ class ServerService:
                                 "cluster_name": cluster_name,
                                 "status": server_dict[cluster_name]['status'],
                             })
-                            self.map(cluster_name)
+                            generate_map(cluster_name)
                     elif '[Say]' in output:
                         start_index = output.find(')')
                         end_index = output.rfind(': ')
@@ -142,6 +176,27 @@ class ServerService:
                         query = """INSERT INTO chat(cluster_name, name, message, message_type, time)
                                         VALUES (?, ?, ?, ?, ?)
                                 """
+                        values = (cluster_name, name, message, message_type, time.time())
+                        cursor.execute(query, values)
+                        conn.commit()
+                        cursor.close()
+                        socketIO.emit('chat', {
+                            "cluster_name": cluster_name,
+                            "name": name,
+                            "message": message,
+                            "message_type": message_type,
+                            "time": time.time()
+                        })
+                    elif '[Skin Announcement]' in output:
+                        start_index = output.rfind(']')
+                        end_index = output.rfind(' ')
+                        name = output[start_index+2:end_index]
+                        message = '获得新皮肤' + output[end_index+1:-1]
+                        message_type = 'gift'
+                        cursor = conn.cursor()
+                        query = """INSERT INTO chat(cluster_name, name, message, message_type, time)
+                                                                VALUES (?, ?, ?, ?, ?)
+                                                        """
                         values = (cluster_name, name, message, message_type, time.time())
                         cursor.execute(query, values)
                         conn.commit()
@@ -236,19 +291,6 @@ class ServerService:
 
         return {"status": "success", "message": f"{cluster_name} 已成功停止"}
 
-    def map(self, cluster_name):
-        if cluster_name not in server_dict:
-            return
-        server_dict[cluster_name]["master_map"] = []
-        lua_code = ('local width, height = TheWorld.Map:GetSize() local mapArray = {}  for x = 0, width do     '
-                    'mapArray[x] = {}     for y = 0, height do         local tile = TheWorld.Map:GetTile(x, '
-                    'y)         mapArray[x][y] = tile     end end  for x = 0, width do     local rowString = '
-                    'table.concat(mapArray[x], " ")     print("map:" .. rowString) end')
-        server_dict[cluster_name]['master_proc'].stdin.write(lua_code + '\n')
-        server_dict[cluster_name]['master_proc'].stdin.flush()
-        server_dict[cluster_name]['caves_proc'].stdin.write(lua_code + '\n')
-        server_dict[cluster_name]['caves_proc'].stdin.flush()
-
     @staticmethod
     def send_remote_start(cluster_name):
         key = str(uuid.uuid4())
@@ -263,7 +305,7 @@ class ServerService:
                 "key": key,
                 "room_name": room_name,
                 "time": int(time.time()),
-                "version": '1.4.0'
+                "version": '1.5.0'
             }
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

@@ -9,7 +9,8 @@ from PIL import Image, ImageFilter
 from flask import send_file
 
 from utils.configLoader import g_variable
-from utils.global_variable import server_dict
+from utils.global_function import generate_map
+from utils.global_variable import server_dict, user
 from utils.dataBase import conn
 
 
@@ -73,25 +74,25 @@ class ClusterService:
         cursor.close()
         data = np.array(json.loads(points[1]), dtype=np.uint8)
         color_map = {
-            3: (77,64,43),
+            3: (77, 64, 43),
             4: (117, 107, 87),
-            5: (88,67,35),
+            5: (88, 67, 35),
             6: (60, 83, 51),
             7: (46, 53, 24),
             8: (46, 52, 82),
-            30: (68,52,35),
+            30: (68, 52, 35),
             31: (115, 93, 49),
-            34: (74,67,44),
-            42:(74,67,44),
+            34: (74, 67, 44),
+            42: (74, 67, 44),
             43: (148, 209, 214),
-            44: (75,66,44),
+            44: (75, 66, 44),
             201: (23, 51, 62),
             202: (23, 51, 62),
             203: (14, 34, 61),
             204: (19, 20, 40),
             205: (40, 87, 93),
             207: (8, 8, 14),
-            208: (40,  87,  93),
+            208: (40, 87, 93),
         }
         colored_data = np.zeros((data.shape[0], data.shape[1], 3), dtype=np.uint8)
         for value, color in color_map.items():
@@ -102,6 +103,11 @@ class ClusterService:
         img_bytes.seek(0)
         return send_file(img_bytes, mimetype='image/png')
 
+    def refresh_map(self, cluster_name):
+        if cluster_name not in server_dict:
+            return {"status": "error", "message": "服务器尚未启动，无法刷新地图"}
+        generate_map(cluster_name)
+        return self.get_map(cluster_name)
 
     @staticmethod
     def get_room(cluster_name):
@@ -200,12 +206,12 @@ class ClusterService:
     def get_log(cluster_name):
         path = os.path.join(g_variable["cluster_path"], cluster_name, "Master", "server_log.txt")
         if not os.path.exists(path):
-            return "日志不存在"
+            return {"status": "error", "message": "日志不存在"}
         log_list = []
         with open(path, "r", encoding='utf-8') as file:
             lines = file.readlines()
             for line in lines:
-                if ']:' in line:
+                if ']:' in line and 'map:' not in line:
                     log_list.append({
                         "cluster_name": cluster_name,
                         "time": line.strip().split("]:")[0][1:],
@@ -242,7 +248,21 @@ class ClusterService:
         cursor.execute(query, values)
         conn.commit()
         cursor.close()
+        cursor = conn.cursor()
+        query = """ DELETE FROM maps WHERE cluster_name = ? """
+        values = (cluster_name,)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        cursor = conn.cursor()
+        query = """ DELETE FROM chat WHERE cluster_name = ? """
+        values = (cluster_name,)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
         shutil.rmtree(os.path.join(g_variable["cluster_path"], cluster_name))
+        if cluster_name in user:
+            del user[cluster_name]
         return {"status": "ok", "message": "存档已删除"}
 
     def upload(self, file):
