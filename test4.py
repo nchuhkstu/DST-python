@@ -1,32 +1,40 @@
-from PIL import Image
-import numpy as np
-
-# 生成一个示例的二维数组表示的数字矩阵
-matrix = [
-    [0, 255, 0, 255, 0],
-    [255, 0, 255, 0, 255],
-    [0, 255, 0, 255, 0],
-    [255, 0, 255, 0, 255],
-    [0, 255, 0, 255, 0]
-]
-
-
-# 定义 RGB 颜色映射函数
-def map_value_to_color(value):
-    if value == 0:
-        return 255, 0, 0  # 红色
-    elif value == 255:
-        return 0, 255, 0  # 绿色
-    else:
-        return 0, 0, 255  # 蓝色
-
-
-# 将二维数组转换为 NumPy 数组，并根据 RGB 颜色映射函数转换为 RGB 图像
-data = np.array([[map_value_to_color(value) for value in row] for row in matrix], dtype=np.uint8)
-img = Image.fromarray(data)
-
-# 保存图像文件
-img.save('rgb_matrix_image.png')
-
-# 显示图像
-img.show()
+def get_map(cluster_name):
+    cursor = conn.cursor()
+    query = """SELECT * FROM maps WHERE cluster_name = ?"""
+    values = (cluster_name,)
+    cursor.execute(query, values)
+    points = cursor.fetchone()
+    if not points:
+        return {"status": "error", "message": "地图尚未生成"}
+    conn.commit()
+    cursor.close()
+    data = np.array(json.loads(points[1]), dtype=np.uint8)
+    color_map = {
+        3: (77, 64, 43),
+        4: (117, 107, 87),
+        5: (88, 67, 35),
+        6: (60, 83, 51),
+        7: (46, 53, 24),
+        8: (46, 52, 82),
+        30: (68, 52, 35),
+        31: (115, 93, 49),
+        34: (74, 67, 44),
+        42: (74, 67, 44),
+        43: (148, 209, 214),
+        44: (75, 66, 44),
+        201: (23, 51, 62),
+        202: (23, 51, 62),
+        203: (14, 34, 61),
+        204: (19, 20, 40),
+        205: (40, 87, 93),
+        207: (8, 8, 14),
+        208: (40, 87, 93),
+    }
+    colored_data = np.zeros((data.shape[0], data.shape[1], 3), dtype=np.uint8)
+    for value, color in color_map.items():
+        colored_data[data == value] = color
+    img = Image.fromarray(colored_data)
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+    return send_file(img_bytes, mimetype='image/png')

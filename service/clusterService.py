@@ -4,20 +4,64 @@ import os.path
 import shutil
 import time
 
-import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image
 from flask import send_file
 
 from utils.configLoader import g_variable
+from utils.dataBase import conn
 from utils.global_function import generate_map
 from utils.global_variable import server_dict, user
-from utils.dataBase import conn
 
 
 class ClusterService:
     def __init__(self):
         # self.template_cluster_path = os.getcwd() + "/_internal/cluster/template"
         self.template_cluster_path = os.getcwd() + "/cluster/template"
+        self.image_paths = {
+            2: Image.open("./images/mini_cobblestone_noise.png"),
+            3: Image.open("./images/mini_rocky_noise.png"),
+            4: Image.open("./images/mini_dirt_noise.png"),
+            5: Image.open("./images/mini_grass2_noise.png"),
+            6: Image.open("./images/mini_grass_noise.png"),
+            7: Image.open("./images/mini_forest_noise.png"),
+            8: Image.open("./images/mini_marsh_noise.png"),
+            9: Image.open("./images/web_noise.png").resize((256, 256)),
+            10: Image.open("./images/mini_woodfloor_noise.png"),
+            11: Image.open("./images/mini_carpet_noise.png"),
+            12: Image.open("./images/mini_checker_noise.png"),
+            13: Image.open("./images/mini_cave_noise.png"),
+            30: Image.open("./images/mini_deciduous_noise.png"),
+            31: Image.open("./images/mini_desert_dirt_noise.png"),
+            34: Image.open("./images/lavaarena_trim_mini.png"),
+            42: Image.open("./images/mini_pebblebeach.png"),
+            43: Image.open("./images/mini_meteor.png"),
+            44: Image.open("./images/ground_noise_shellbeach.png").resize((256, 256)),
+            201: Image.open("./images/mini_water_shallow.png"),
+            202: Image.new('RGB', (256, 256), (23, 51, 62)),
+            203: Image.new('RGB', (256, 256), (14, 34, 61)),
+            204: Image.new('RGB', (256, 256), (19, 20, 40)),
+            205: Image.new('RGB', (256, 256), (40, 87, 93)),
+            206: Image.open("./images/mini_water_coral.png"),
+            207: Image.new('RGB', (256, 256), (8, 8, 14)),
+            208: Image.new('RGB', (256, 256), (40, 87, 93)),
+            257: Image.open("./images/ground_noise_monkeyisland.png").resize((256, 256)),
+            260: Image.open("./images/mini_woodfloor_noise.png"),
+            265: Image.open("./images/noise_mosaictiles_grey.png"),
+            268: Image.open("./images/mini_carpet2_noise.png"),
+        }
+        self.per_num = 28
+        self.small_image_size = 9
+        self.cropped_images = {}
+        for key, value in self.image_paths.items():
+            self.cropped_images[key] = []
+            for i in range(self.per_num):
+                array = []
+                left = i * self.small_image_size
+                for j in range(self.per_num):
+                    upper = j * self.small_image_size
+                    cropped_image = value.crop((left, upper, left + self.small_image_size, upper + self.small_image_size))
+                    array.append(cropped_image)
+                self.cropped_images[key].append(array)
 
     @staticmethod
     def get():
@@ -61,8 +105,7 @@ class ClusterService:
             clusters.append(cluster)
         return clusters
 
-    @staticmethod
-    def get_map(cluster_name):
+    def get_map(self, cluster_name):
         cursor = conn.cursor()
         query = """SELECT * FROM maps WHERE cluster_name = ?"""
         values = (cluster_name,)
@@ -72,36 +115,25 @@ class ClusterService:
             return {"status": "error", "message": "地图尚未生成"}
         conn.commit()
         cursor.close()
-        data = np.array(json.loads(points[1]), dtype=np.uint8)
-        color_map = {
-            3: (77, 64, 43),
-            4: (117, 107, 87),
-            5: (88, 67, 35),
-            6: (60, 83, 51),
-            7: (46, 53, 24),
-            8: (46, 52, 82),
-            30: (68, 52, 35),
-            31: (115, 93, 49),
-            34: (74, 67, 44),
-            42: (74, 67, 44),
-            43: (148, 209, 214),
-            44: (75, 66, 44),
-            201: (23, 51, 62),
-            202: (23, 51, 62),
-            203: (14, 34, 61),
-            204: (19, 20, 40),
-            205: (40, 87, 93),
-            207: (8, 8, 14),
-            208: (40, 87, 93),
-        }
-        colored_data = np.zeros((data.shape[0], data.shape[1], 3), dtype=np.uint8)
-        for value, color in color_map.items():
-            colored_data[data == value] = color
-        img = Image.fromarray(colored_data)
+        points = json.loads(points[1])
+
+        big_image = Image.new('RGB', (3840, 3840))
+
+        points_length = len(points)
+        # dict = {}
+        for i in range(points_length):
+            left_num = i % self.per_num
+            left_size = i * self.small_image_size
+            for j in range(points_length):
+                digit = int(points[i][j])
+                if digit in self.image_paths:
+                    big_image.paste(self.cropped_images[digit][left_num][j % self.per_num], (left_size, j * self.small_image_size))
+
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
+        big_image.transpose(Image.TRANSPOSE).save(img_bytes, format='JPEG')
         img_bytes.seek(0)
-        return send_file(img_bytes, mimetype='image/png')
+
+        return send_file(img_bytes, mimetype='image/jpeg')
 
     def refresh_map(self, cluster_name):
         if cluster_name not in server_dict:
